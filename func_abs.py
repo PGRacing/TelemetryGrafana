@@ -2,6 +2,19 @@ import csv
 from datetime import datetime
 from conf_influxdb import *
 
+def short_timestamp_to_standard_string(org_timestamp):
+  int_timestamp = int(org_timestamp)
+  minutes = int(int_timestamp / 60000) % 60
+  str_minutes = str(minutes)
+  if minutes < 10:
+    str_minutes = '0' + str_minutes
+  seconds = int(int_timestamp / 1000) % 60
+  str_seconds = str(seconds)
+  if seconds < 10:
+    str_seconds = '0' + str_seconds
+  timestamp = str('T00:' + str_minutes + ':' + str_seconds + '.' + str(int_timestamp % 1000))
+  return timestamp
+
 def import_csv_abs(filepath, date):
   # CSV column names as following:
   # timestamp,ID,speed
@@ -14,13 +27,15 @@ def import_csv_abs(filepath, date):
 
   for row in csv_reader:
     #print(f'{row["timestamp"]}; {row["ID"]}; {row["speed"]}')
+    #timestamp '2023-11-04T11:00:00.000000Z'
     org_timestamp = row["timestamp"]
-    timestamp = str(date + 'T' + org_timestamp[:8] + '.' + org_timestamp[9:12] + '000Z')
-    # TODO discuss timestamp format
+    # TODO switch timestamp format
+    #timestamp = str(date + 'T' + org_timestamp[:8] + '.' + org_timestamp[9:12] + '000Z')
+    timestamp = str(date + short_timestamp_to_standard_string(org_timestamp))
     point = (
       Point('abs')
       .tag("ID", f'{row["ID"]}')
-      .field("speed", int(row["speed"]))
+      .field("speed", float(row["speed"]))
       .time(timestamp)
     )
     points.append(point)
