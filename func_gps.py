@@ -10,7 +10,7 @@ def import_csv_gps(filepath):
   file = open(filepath, "r")
   csv_reader = csv.DictReader(file)
   line_count = 0
-  start_time = datetime.datetime.now()
+  start_time = 0
   points = []
   startTime = datetime.datetime.now()
 
@@ -19,12 +19,13 @@ def import_csv_gps(filepath):
       start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
       break
 
+  if start_time == 0:
+    return 0
   print(start_time)
 
   for row in csv_reader:
     #print(f'{row["timestamp"]}; {row["LOG"]}; {row["utc"]}; {row["pos status"]}; {row["lat"]}; {row["lat dir"]}; {row["lon"]}; {row["lon dir"]}; {row["speed"]}; {row["track"]}; {row["date"]}; {row["mode ind"]}')
     org_timestamp = row["timestamp"]
-    #timestamp = str(date + 'T' + org_timestamp[:8] + '.' + org_timestamp[9:12] + '000Z')
     timestamp = start_time_add_timestamp(start_time, org_timestamp)
     point = (
       Point('gps')
@@ -39,6 +40,6 @@ def import_csv_gps(filepath):
     line_count += 1
 
   endTime = datetime.datetime.now()
-  print(f'Imported {line_count} rows in {endTime - startTime}')
+  print(f'GPS: Imported {line_count} rows in {endTime - startTime}')
 
   return start_time
