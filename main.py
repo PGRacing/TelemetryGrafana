@@ -5,7 +5,13 @@ from func_damp import *
 from func_abs import *
 from func_gps import *
 
-#date = datetime(year=2023, month=11, day=5)
-start_time = import_csv_gps('C:/Users/krzys/Desktop/telemetry/5.11.2023/GPS0101-13.csv')
-#import_csv_damp('C:/Users/krzys/Desktop/telemetry/5.11.2023/DAMP0101-13.csv', '2023-11-05')
-#import_csv_abs('C:/Users/krzys/Desktop/telemetry/5.11.2023/ABS0101-13.csv', '2023-11-05')
+path = 'C:/Users/krzys/Desktop/telemetry/5.11.2023/'
+
+for i in range(1, 15):
+    print(f'i = {i}')
+    start_time = import_csv_gps(path + 'GPS0101-' + str(i) + '.csv')
+    if start_time == 0:
+        print('Start time not set! Skip this iteration.')
+        continue
+    import_csv_abs(path + 'ABS0101-' + str(i) + '.csv', start_time)
+    import_csv_damp(path + 'DAMP0101-' + str(i) + '.csv', start_time)
