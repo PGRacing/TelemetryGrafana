@@ -43,8 +43,6 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     micros = int(gps_timestamp[7:])
     gps_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=micros)
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
-    print(gps_datetime)
-    print(timedelta)
     return gps_datetime - timedelta
 
 def start_time_add_timestamp(start_time, csv_timestamp):
