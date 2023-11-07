@@ -23,6 +23,9 @@ def csv_timestamp_to_datetime(date, csv_timestamp):
     micros = int(csv_timestamp[9:]) * 1000
     return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=hour, minute=minute, second=second, microsecond=micros)
 
+def csv_millis_timestamp_to_timedelta(csv_millis_timestamp):
+    return datetime.timedelta(milliseconds=int(csv_millis_timestamp))
+
 def csv_timestamp_to_timedelta(csv_timestamp):
     hour = int(csv_timestamp[:2])
     minute = int(csv_timestamp[3:5])
@@ -45,4 +48,8 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
 
 def start_time_add_timestamp(start_time, csv_timestamp):
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
+    return start_time + timedelta
+
+def start_time_add_millis_timestamp(start_time, csv_millis_timestamp):
+    timedelta = csv_millis_timestamp_to_timedelta(csv_millis_timestamp)
     return start_time + timedelta
