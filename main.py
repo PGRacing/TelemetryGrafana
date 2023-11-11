@@ -7,11 +7,23 @@ from func_gps import *
 
 path = 'C:/Users/krzys/Desktop/telemetry/5.11.2023/'
 
-for i in range(1, 15):
-    print(f'i = {i}')
-    start_time = import_csv_gps(path + 'GPS0101-' + str(i) + '.csv')
-    if start_time == 0:
-        print('Start time not set! Skip this iteration.')
-        continue
-    import_csv_abs(path + 'ABS0101-' + str(i) + '.csv', start_time)
-    import_csv_damp(path + 'DAMP0101-' + str(i) + '.csv', start_time)
+def import_influxdb():
+    for i in range(1, 15):
+        print(f'i = {i}')
+        start_time = import_csv_gps(path + 'GPS0101-' + str(i) + '.csv')
+        if start_time == 0:
+            print('Start time not set! Skip this iteration.')
+            continue
+        import_csv_abs(path + 'ABS0101-' + str(i) + '.csv', start_time)
+        import_csv_damp(path + 'DAMP0101-' + str(i) + '.csv', start_time)
+
+def convert_csv_gps_files():
+    for i in range(1, 15):
+        print(f'i = {i}')
+        start_time = import_csv_gps(path + 'GPS0101-' + str(i) + '.csv')
+        if start_time == 0:
+            print('Start time not set! Skip this iteration.')
+            continue
+        convert_csv_gps(path + 'GPS0101-' + str(i) + '.csv')
+
+convert_csv_gps_files()
