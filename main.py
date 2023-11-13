@@ -10,15 +10,18 @@ from func_gps import *
 path = 'C:/Users/krzys/Desktop/telemetry/5.11.2023/'
 path1 = 'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/'
 
-def import_influxdb():
+def import_influxdb(filepath):
     for i in range(1, 15):
         print(f'i = {i}')
-        start_time = import_csv_gps(path + 'GPS0101-' + str(i) + '.csv')
-        if start_time == 0:
-            print('Start time not set! Skip this iteration.')
-            continue
-        import_csv_abs(path + 'ABS0101-' + str(i) + '.csv', start_time)
-        import_csv_damp(path + 'DAMP0101-' + str(i) + '.csv', start_time)
+        try:
+            start_time = import_csv_gps(filepath + 'GPS0101-' + str(i) + '.csv')
+            if start_time == 0:
+                print('Start time not set! Skip this iteration.')
+                continue
+            #import_csv_abs(filepath + 'ABS0101-' + str(i) + '.csv', start_time)
+            #import_csv_damp(filepath + 'DAMP0101-' + str(i) + '.csv', start_time)
+        except ValueError as e:
+            print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
 def convert_csv_gps_files(filepath):
     for i in range(1, 34):
@@ -32,4 +35,5 @@ def convert_csv_gps_files(filepath):
         except ValueError as e:
             print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
-convert_csv_gps_files(path1)
+#convert_csv_gps_files(path1)
+import_influxdb(path)
