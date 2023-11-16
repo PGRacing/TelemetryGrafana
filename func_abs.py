@@ -20,7 +20,7 @@ def import_csv_abs(filepath, start_time):
     point = (
       Point('abs')
       .tag("ID", f'{row["ID"]}')
-      .field("speed", float(row["speed"]))
+      .field("speed", float(row["speed"]) * 2.0)
       .time(timestamp)
     )
     points.append(point)
