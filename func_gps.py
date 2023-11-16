@@ -46,7 +46,7 @@ def import_csv_gps(filepath):
 
   if start_time == 0:
     return 0
-  print(start_time)
+  #print(start_time)
 
   for row in csv_reader:
     #print(f'{row["timestamp"]}; {row["LOG"]}; {row["utc"]}; {row["pos status"]}; {row["lat"]}; {row["lat dir"]}; {row["lon"]}; {row["lon dir"]}; {row["speed"]}; {row["track"]}; {row["date"]}; {row["mode ind"]}')
@@ -55,21 +55,25 @@ def import_csv_gps(filepath):
         if not nmea_checksum(new_row):
           continue
     else:
+       #print(f'{row["lat"]}, {row["lat dir"]}, {row["lon"]}, {row["lon dir"]},')
        continue
     
     org_timestamp = row["timestamp"]
     timestamp = start_time_add_timestamp(start_time, org_timestamp)
+    # transformation x1 = int(x/100) + ((x%100)/60)
+    lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
+    lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)
     point = (
       Point('gps')
       .tag("ID", "gps_position")
-      .field("latitude", float(row["lat"]) / 100.0)
+      .field("latitude", lat)
       .time(timestamp)
     )
     points.append(point)
     point = (
       Point('gps')
       .tag("ID", "gps_position")
-      .field("longitude", float(row["lon"]) / 100.0)
+      .field("longitude", lon)
       .time(timestamp)
     )
     points.append(point)
@@ -80,7 +84,7 @@ def import_csv_gps(filepath):
       .time(timestamp)
     )
     points.append(point)
-    if line_count % 999 == 0:
+    if line_count % 333 == 0:
       write_api.write(bucket=bucket, org=org, record=points)
       points.clear()
     line_count += 1
