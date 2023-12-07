@@ -84,7 +84,7 @@ def import_csv_gps(filepath):
       .time(timestamp)
     )
     points.append(point)
-    if line_count % 333 == 0:
+    if line_count % 1666 == 0:
       write_api.write(bucket=bucket, org=org, record=points)
       points.clear()
     line_count += 1
