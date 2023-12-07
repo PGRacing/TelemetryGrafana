@@ -2,6 +2,11 @@ import csv
 from datetime import datetime
 from conf_influxdb import *
 from utils_timestamp import *
+from damp_ang_to_pos import *
+
+DAMPER_MIN_ANGLE = 0.0
+DAMPER_MAX_ANGLE = 110.0
+DAMPER_MID_ANGLE = 55.0
 
 # DEG_TO_MM_FRONT = 1.221374046
 # DEG_TO_MM_REAR = 1.070090958
@@ -32,6 +37,10 @@ REF_VAL_SW = 2380.0
 # 6  SW skret w lewo - wzrost R
 # 6  SW skret w prawo - spadek R
 
+# linear interpolation
+def lerp(a, b, alpha):
+  return a + (alpha * (b - a))
+
 def import_csv_damp(filepath, start_time):
   # CSV column names as following:
   # timestamp,ID,delta
@@ -49,22 +58,48 @@ def import_csv_damp(filepath, start_time):
     delta = 0.0
     match int(row["ID"]):
       case 7:
-        delta = - (REF_VAL_FL - raw_value) * R_TO_MM
+        delta = - (REF_VAL_FL - raw_value) + DAMPER_MID_ANGLE
       case 8:
-        delta = (REF_VAL_FR - raw_value) * R_TO_MM
+        delta = (REF_VAL_FR - raw_value) + DAMPER_MID_ANGLE
       case 11:
-        delta = - (REF_VAL_RL - raw_value) * R_TO_MM
+        delta = - (REF_VAL_RL - raw_value) + DAMPER_MID_ANGLE
       case 12:
-        delta = (REF_VAL_RR - raw_value) * R_TO_MM
+        delta = (REF_VAL_RR - raw_value) + DAMPER_MID_ANGLE
       case 6:
         delta = (REF_VAL_SW - raw_value) * R_TO_DEG_SW
+
+    if int(row["ID"]) != 6:
+      adc_angle = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, delta / 4096)
+      if int(row["ID"]) == 7 or int(row["ID"]) != 8:
+        try:
+          adc_angle_low, adc_andle_high = find_closest_angles_front(adc_angle)
+        except IndexError:
+          continue
+      elif int(row["ID"]) == 11 or int(row["ID"]) != 12:
+        try:
+          adc_angle_low, adc_andle_high = find_closest_angles_back(adc_angle)
+        except IndexError:
+          continue
+      angle = lerp(adc_angle_low, adc_andle_high, adc_angle)
+    else:
+      angle = delta
+
     point = (
       Point('damp')
       .tag("ID", f'{row["ID"]}')
-      .field("delta", delta)
+      .field("angle", angle)
       .time(timestamp)
     )
     points.append(point)
+    
+    point = (
+      Point('damp')
+      .tag("ID", f'{row["ID"]}')
+      .field("raw_delta", raw_value)
+      .time(timestamp)
+    )
+    #points.append(point)
+
     if line_count % 5000 == 0:
       write_api.write(bucket=bucket, org=org, record=points)
       points.clear()
