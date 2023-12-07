@@ -10,6 +10,7 @@ path = 'C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry/23_11_05_Pszczol
 GForce =  9.80665 # m/s2
 timestep = 0.04 # s
 file_counter = 0
+deg_to_met = 111196.672 
 
 
 def find_acc(filepath):
@@ -22,6 +23,7 @@ def linear_kalman(filefullpath):
     global GForce
     global timestep
     global row_counter
+    global deg_to_met
     
     file = open(filefullpath, 'r')
     csvreader_object = csv.reader(file)
@@ -34,8 +36,7 @@ def linear_kalman(filefullpath):
     points = []
     line_count = 0
     
-    angular_position_old = 0
-    angular_position_new = 0
+    angular_position = 0
     
     C = np.array([[1, 0, 0, 0],
                   [0, 1, 0, 0]])
@@ -69,15 +70,14 @@ def linear_kalman(filefullpath):
         row['GForceY'] = float(row['GForceY']) * GForce 
         row['GForceZ'] = float(row['GForceZ']) * GForce
         
-        row['GyroX'] = float(row['GyroX'])
-        row['GyroY'] = float(row['GyroY'])
-        row['GyroZ'] = float(row['GyroZ'])
+        row['GyroX'] = math.radians(float(row['GyroX']))
+        row['GyroY'] = math.radians(float(row['GyroY']))
+        row['GyroZ'] = math.radians(float(row['GyroZ']))
         
-        row['Latitude'] = float(row['Latitude']) # y
-        row['Longitude'] = float(row['Longitude']) # x
-        
-        row['Speed'] = float(row['Speed']) * (1000/3600)
-        
+        if ((row['Latitude'] != '') and (row['Longitude'] != '')):
+            row['Latitude'] = float(row['Latitude']) # y
+            row['Longitude'] = float(row['Longitude']) # x
+                
         
         if row_counter == 1:
 
@@ -94,15 +94,21 @@ def linear_kalman(filefullpath):
         
         
         if row_counter > 1:
-            angular_position_delta = row['GyroZ'] * timestep + 0.5 * row['GForceZ'] * (timestep**2)
-         #   angular_position_new = angular_position_old + angular_position_delta
+            angular_position_delta = row['GyroZ'] * timestep# + 0.5 * row['GForceZ'] * (timestep**2)
+            angular_position += angular_position_delta
+            
+         #   print(angular_position_delta)
+          #  print(angular_position)
             
 
-            velocity_x= row['GyroX'] * math.cos(angular_position_delta) + row['GForceX'] * timestep
-            velocity_y = row['GyroY'] * math.cos(angular_position_delta) + row['GForceY'] * timestep
+            velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
+            velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
             
-        #    velocity_x = row['GForceX'] * timestep
-       #     velocity_y = row['GForceY'] * timestep 
+        #    velocity_x_delta = row['GForceX'] * timestep
+        #    velocity_y_delta = row['GForceY'] * timestep 
+            
+            velocity_x += velocity_x_delta
+            velocity_y += velocity_y_delta
             
             x_old = np.array([[longitude_old],
                               [latitude_old],
@@ -111,17 +117,20 @@ def linear_kalman(filefullpath):
 
             x_new = A @ x_old
            
-            y = C @ x_old
+            y = C @ x_new
            
-            longitude_new = longitude_old + velocity_x * timestep
-            latitude_new = latitude_old + velocity_y * timestep
+            latitude_new = latitude_old + (velocity_y * timestep)/deg_to_met
+            longitude_new = longitude_old + (velocity_x * timestep)/(deg_to_met * math.cos(math.radians(latitude_new)))
             
-            long_real = row['Longitude']
-            lat_real = row['Latitude']
-           
-            longitude_correction = (float(y[0][0]) + row['Longitude']) / 2
-            latitude_correction = (float(y[1][0]) + row['Latitude']) / 2
             
+            if ((row['Longitude'] == '') or (row['Latitude'] == '')):
+                longitude_correction = longitude_new #float(y[0][0])
+                latitude_correction = latitude_new  #float(y[1][0])
+            else:
+                longitude_correction = (longitude_new + row['Longitude']) / 2
+                latitude_correction = (latitude_new + row['Latitude']) / 2
+                
+
             longitude_new = longitude_correction
             latitude_new = latitude_correction
            
@@ -156,7 +165,7 @@ def linear_kalman(filefullpath):
 
             
             
-            angular_position_old = angular_position_new
+       #     angular_position_old = angular_position_new
       #      velocity_x_old = velocity_x_new
       #      velocity_y_old = velocity_y_new
             

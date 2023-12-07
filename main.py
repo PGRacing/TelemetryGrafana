@@ -7,7 +7,7 @@ from func_gps import *
 
 # TODO IMPORTANT try-except/validate lines import better than aborting whole file import
 
-path = 'C:/Users/krzys/Desktop/telemetry/5.11.2023/'
+path = "C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry/23_11_05_Pszczolki/"
 path1 = 'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/'
 
 def import_influxdb(filepath):
@@ -23,6 +23,7 @@ def import_influxdb(filepath):
             import_csv_damp(filepath + 'DAMP0101-' + str(i) + '.csv', start_time)
             imported_files += 1
         except ValueError as e:
+            #print(e)
             print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
     print(f'Succesfully imported {imported_files} files!')
 
@@ -38,5 +39,5 @@ def convert_csv_gps_files(filepath):
         except ValueError as e:
             print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
-#convert_csv_gps_files(path1)
-import_influxdb(path1)
+#convert_csv_gps_files(path)
+import_influxdb(path)
