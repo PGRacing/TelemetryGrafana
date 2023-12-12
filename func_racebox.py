@@ -70,9 +70,9 @@ def linear_kalman(filefullpath):
         row['GForceY'] = float(row['GForceY']) * GForce 
         row['GForceZ'] = float(row['GForceZ']) * GForce
         
-        row['GyroX'] = math.radians(float(row['GyroX']))
-        row['GyroY'] = math.radians(float(row['GyroY']))
-        row['GyroZ'] = math.radians(float(row['GyroZ']))
+        row['GyroX'] = float(row['GyroX'])
+        row['GyroY'] = float(row['GyroY'])
+        row['GyroZ'] = float(row['GyroZ'])
         
         if ((row['Latitude'] != '') and (row['Longitude'] != '')):
             row['Latitude'] = float(row['Latitude']) # y
@@ -94,20 +94,18 @@ def linear_kalman(filefullpath):
         
         
         if row_counter > 1:
-            angular_position_delta = (row['GyroZ'] * timestep)/10  + 0.5 * row['GForceZ'] * (timestep**2)
-            angular_position += angular_position_delta
+         #   angular_position_delta = (row['GyroZ'] * timestep)/10  + 0.5 * row['GForceZ'] * (timestep**2)
+         #   angular_position += angular_position_delta
             
-            angular_acceleration = angular_position_delta / timestep
+        #    angular_acceleration = angular_position_delta / timestep
             
-         #   print(angular_position_delta)
-          #  print(angular_position)
-            print(math.degrees(angular_position))
+        #    print(math.degrees(angular_position))
 
-            velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
-            velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
+        #    velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
+        #    velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
             
-        #    velocity_x_delta = row['GForceX'] * timestep
-        #    velocity_y_delta = row['GForceY'] * timestep 
+            velocity_x_delta = row['GForceX'] * timestep
+            velocity_y_delta = row['GForceY'] * timestep 
             
             velocity_x += velocity_x_delta
             velocity_y += velocity_y_delta
@@ -145,22 +143,89 @@ def linear_kalman(filefullpath):
             longitude_old = longitude_new
             latitude_old = latitude_new
            
+            #latitude
             point = (
-              Point('gps_2')
+              Point('gps')
               .tag("ID", "gps_position")
               .field("latitude", latitude_correction)
               .time(row['Time'])
             )
             points.append(point)
+            
+            #longitude
             point = (
-              Point('gps_2')
+              Point('gps')
               .tag("ID", "gps_position")
               .field("longitude", longitude_correction)
               .time(row['Time'])
             )
             points.append(point)
+            
+            #speed
+            point = (
+                Point('spd')
+                .tag('Record', "velocity")
+                .field('speed', float(row['Speed']))
+                .time(row['Time'])
+                )
+            points.append(point)
+            
+            # gyro_x
+            point = (
+              Point('gyro')
+              .tag("axis", "x")
+              .field("gyro_x", float(row["GyroX"]))
+              .time(row['Time'])
+            )
+            points.append(point)
+            
+            # gyro_y
+            point = (
+              Point('gyro')
+              .tag("axis", "y")
+              .field("gyro_y", float(row["GyroY"]))
+              .time(row['Time'])
+            )
+            points.append(point)
+            
+            # gyro_z
+            point = (
+              Point('gyro')
+              .tag("axis", "z")
+              .field("gyro_z", float(row["GyroZ"]))
+              .time(row['Time'])
+            )
+            points.append(point)
+            
+            # acc_x
+            point = (
+              Point('acc')
+              .tag("axis", "x")
+              .field("acc_x", float(row["GForceX"]))
+              .time(row['Time'])
+            )
+            points.append(point)
+            
+            # acc_y
+            point = (
+              Point('acc')
+              .tag("axis", "y")
+              .field("acc_y", float(row["GForceY"]))
+              .time(row['Time'])
+            )
+            points.append(point)
+            
+            # acc_z
+            point = (
+              Point('acc')
+              .tag("axis", "z")
+              .field("acc_z", float(row["GForceZ"]))
+              .time(row['Time'])
+            )
+            
+            
    
-            if row_counter % 2500 == 0:
+            if row_counter % 400 == 0:
               write_api.write(bucket=bucket, org=org, record=points)
               points.clear()
             line_count += 1
