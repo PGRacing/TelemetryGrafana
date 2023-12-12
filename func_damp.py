@@ -5,8 +5,8 @@ from utils_timestamp import *
 from damp_ang_to_pos import *
 
 DAMPER_MIN_ANGLE = 0.0
-DAMPER_MAX_ANGLE = 110.0
-DAMPER_MID_ANGLE = 55.0
+DAMPER_MAX_ANGLE = 100.0
+DAMPER_MID_ANGLE = (DAMPER_MAX_ANGLE + DAMPER_MIN_ANGLE) / 2.0
 
 # DEG_TO_MM_FRONT = 1.221374046
 # DEG_TO_MM_REAR = 1.070090958
@@ -72,15 +72,15 @@ def import_csv_damp(filepath, start_time):
       adc_angle = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, delta / 4096)
       if int(row["ID"]) == 7 or int(row["ID"]) != 8:
         try:
-          adc_angle_low, adc_andle_high = find_closest_angles_front(adc_angle)
+          damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_front(adc_angle)
         except IndexError:
           continue
       elif int(row["ID"]) == 11 or int(row["ID"]) != 12:
         try:
-          adc_angle_low, adc_andle_high = find_closest_angles_back(adc_angle)
+          damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_back(adc_angle)
         except IndexError:
           continue
-      angle = lerp(adc_angle_low, adc_andle_high, adc_angle)
+      angle = lerp(damper_angle_to_pos_low[0], damper_angle_to_pos_high[0], (adc_angle- damper_angle_to_pos_low[1]) / (damper_angle_to_pos_high[1] - damper_angle_to_pos_low[1]))
     else:
       angle = delta
 

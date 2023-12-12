@@ -1,20 +1,20 @@
 def find_closest_angles_front(angle):
   i = 0
   while True:
-    if angle > ang_to_pos_front[i][0]:
+    if angle > pos_to_angle_front[i][1]:
       # TODO make sure angle is not over 20 deg
-      return ang_to_pos_front[i][0], ang_to_pos_front[i + 1][0]
+      return (pos_to_angle_front[i-1], pos_to_angle_front[i])
     i += 1
 
 def find_closest_angles_back(angle):
   i = 0
   while True:
-    if angle > ang_to_pos_back[i][0]:
+    if angle > pos_to_angle_back[i][1]:
       # TODO make sure angle is not over 20 deg
-      return ang_to_pos_back[i][0], ang_to_pos_back[i + 1][0]
+      return (pos_to_angle_back[i-1], pos_to_angle_back[i])
     i += 1
 
-ang_to_pos_front = [
+pos_to_angle_front = [
 [20.00, 17.12],
 [19.50, 16.66],
 [19.00, 16.2],
@@ -98,7 +98,7 @@ ang_to_pos_front = [
 [-20.00, -15.63],
 ]
 
-ang_to_pos_back = [
+pos_to_angle_back = [
 [20.00, 18.91],
 [19.50, 18.42],
 [19.00, 17.93],
