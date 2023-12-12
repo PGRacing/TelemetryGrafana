@@ -36,7 +36,7 @@ def linear_kalman(filefullpath):
     points = []
     line_count = 0
     
-    angular_position = 0
+    angular_position = math.radians(90)
     
     C = np.array([[1, 0, 0, 0],
                   [0, 1, 0, 0]])
@@ -94,12 +94,14 @@ def linear_kalman(filefullpath):
         
         
         if row_counter > 1:
-            angular_position_delta = row['GyroZ'] * timestep# + 0.5 * row['GForceZ'] * (timestep**2)
+            angular_position_delta = (row['GyroZ'] * timestep)/10  + 0.5 * row['GForceZ'] * (timestep**2)
             angular_position += angular_position_delta
+            
+            angular_acceleration = angular_position_delta / timestep
             
          #   print(angular_position_delta)
           #  print(angular_position)
-            
+            print(math.degrees(angular_position))
 
             velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
             velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
