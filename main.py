@@ -1,8 +1,5 @@
-import datetime
-from influxdb_client import InfluxDBClient, Point, WritePrecision
-from conf_influxdb import *
-from func_damp import *
 from func_abs import *
+from func_damp import *
 from func_gps import *
 
 # TODO IMPORTANT try-except/validate lines import better than aborting whole file import
