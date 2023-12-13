@@ -6,6 +6,7 @@ from func_gps import *
 
 path = "C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry/23_11_05_Pszczolki/"
 path1 = 'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/'
+path2 = "C:/Users/cepek/Politechnika Gdańska/PGRacing Team - Dokumenty/PGRACING TEAM - PROJEKT/Resources/TESTING/05.11.2023 - Pszczółki/Raw data/05.11-Pszczolki/"
 
 def import_influxdb(filepath):
     imported_files = 0
@@ -37,4 +38,4 @@ def convert_csv_gps_files(filepath):
             print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
 #convert_csv_gps_files(path)
-import_influxdb(path)
+import_influxdb(path2)
