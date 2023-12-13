@@ -38,4 +38,4 @@ def convert_csv_gps_files(filepath):
             print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
 #convert_csv_gps_files(path)
-import_influxdb(path2)
+import_influxdb(path)
