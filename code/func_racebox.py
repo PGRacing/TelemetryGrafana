@@ -1,6 +1,5 @@
 import numpy as np
 import csv
-import pandas as pd
 from conf_influxdb import *
 import math
 
@@ -20,11 +19,6 @@ def find_acc(filepath):
         file_counter += 1
 
 def linear_kalman(filefullpath):
-    global GForce
-    global timestep
-    global row_counter
-    global deg_to_met
-    
     file = open(filefullpath, 'r')
     csvreader_object = csv.reader(file)
     for i in range (1, 13):
@@ -94,18 +88,18 @@ def linear_kalman(filefullpath):
         
         
         if row_counter > 1:
-         #   angular_position_delta = (row['GyroZ'] * timestep)/10  + 0.5 * row['GForceZ'] * (timestep**2)
-         #   angular_position += angular_position_delta
+            angular_position_delta = (row['GyroZ'] * timestep)/10  + 0.5 * row['GForceZ'] * (timestep**2)
+            angular_position += angular_position_delta
             
         #    angular_acceleration = angular_position_delta / timestep
             
         #    print(math.degrees(angular_position))
 
-        #    velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
-        #    velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
+            velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
+            velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
             
-            velocity_x_delta = row['GForceX'] * timestep
-            velocity_y_delta = row['GForceY'] * timestep 
+        #    velocity_x_delta = row['GForceX'] * timestep
+        #    velocity_y_delta = row['GForceY'] * timestep 
             
             velocity_x += velocity_x_delta
             velocity_y += velocity_y_delta
@@ -222,10 +216,10 @@ def linear_kalman(filefullpath):
               .field("acc_z", float(row["GForceZ"]))
               .time(row['Time'])
             )
-            
+            points.append(point)
             
    
-            if row_counter % 400 == 0:
+            if row_counter % 555 == 0:
               write_api.write(bucket=bucket, org=org, record=points)
               points.clear()
             line_count += 1
