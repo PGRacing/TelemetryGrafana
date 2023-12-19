@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
-from conf_influxdb import *
-from utils_timestamp import *
+from code.conf_influxdb import *
+from code.utils_timestamp import *
 
 def import_csv_abs(filepath, start_time):
   # CSV column names as following:

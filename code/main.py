@@ -1,12 +1,13 @@
-from func_abs import *
-from func_damp import *
-from func_gps import *
+from code.func_abs import *
+from code.func_damp import *
+from code.func_gps import *
 
 # TODO IMPORTANT try-except/validate lines import better than aborting whole file import
 
-path = "C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry/23_11_05_Pszczolki/"
-path1 = 'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/'
-path2 = "C:/Users/cepek/Politechnika Gdańska/PGRacing Team - Dokumenty/PGRACING TEAM - PROJEKT/Resources/TESTING/05.11.2023 - Pszczółki/Raw data/05.11-Pszczolki/"
+paths = ["C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry/23_11_05_Pszczolki/",
+        'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/',
+        "C:/Users/cepek/Politechnika Gdańska/PGRacing Team - Dokumenty/PGRACING TEAM - PROJEKT/Resources/TESTING/05.11.2023 - Pszczółki/Raw data/05.11-Pszczolki/"
+]
 
 def import_influxdb(filepath):
     imported_files = 0
@@ -38,4 +39,8 @@ def convert_csv_gps_files(filepath):
             print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
 #convert_csv_gps_files(path)
-import_influxdb(path)
+if __name__ == "__main__":
+    for path in paths:
+        if os.path.exists(path):
+            import_influxdb(path)
+            break

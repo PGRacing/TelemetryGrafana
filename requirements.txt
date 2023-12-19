@@ -1,1 +1,4 @@
 influxdb_client[ciso]
+matplotlib~=3.8.2
+numpy~=1.26.2
+filterpy~=1.4.5

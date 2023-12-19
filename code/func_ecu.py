@@ -1,6 +1,4 @@
-import csv
 from datetime import datetime
-from conf_influxdb import *
 from utils_timestamp import *
 import struct
 

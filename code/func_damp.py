@@ -1,8 +1,9 @@
 import csv
 from datetime import datetime
-from conf_influxdb import *
-from utils_timestamp import *
-from damp_ang_to_pos import *
+from code.conf_influxdb import *
+from code.utils_timestamp import *
+from code.damp_ang_to_pos import *
+
 
 DAMPER_MIN_ANGLE = 0.0
 DAMPER_MAX_ANGLE = 100.0
@@ -12,11 +13,22 @@ DAMPER_MID_ANGLE = (DAMPER_MAX_ANGLE + DAMPER_MIN_ANGLE) / 2.0
 # DEG_TO_MM_REAR = 1.070090958
 # R_TO_DEG = 100.0
 # 100R = 10mm
+
+# linear interpolation
+def lerp(a, b, alpha):
+  return a + (alpha * (b - a))
+
 R_TO_MM = 0.1
-REF_VAL_FL = 1080.0
-REF_VAL_FR = 1740.0
-REF_VAL_RL = 970.0
-REF_VAL_RR = 1840.0
+MAX_ADC_VALUE = 4095.0
+REF_VAL_FL = 1080.0 /MAX_ADC_VALUE
+REF_VAL_FR = 1740.0 /MAX_ADC_VALUE
+REF_VAL_RL = 970.0 /MAX_ADC_VALUE
+REF_VAL_RR = 1840.0 /MAX_ADC_VALUE
+
+REF_ANGLE_FL = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, REF_VAL_FL)
+REF_ANGLE_FR = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, REF_VAL_FR)
+REF_ANGLE_RL = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, REF_VAL_RL)
+REF_ANGLE_RR = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, REF_VAL_RR)
 
 # 900R = 90deg
 R_TO_DEG_SW = 0.1
@@ -37,9 +49,7 @@ REF_VAL_SW = 2380.0
 # 6  SW skret w lewo - wzrost R
 # 6  SW skret w prawo - spadek R
 
-# linear interpolation
-def lerp(a, b, alpha):
-  return a + (alpha * (b - a))
+
 
 def import_csv_damp(filepath, start_time):
   # CSV column names as following:
@@ -54,36 +64,8 @@ def import_csv_damp(filepath, start_time):
   for row in csv_reader:
     #print(f'{row["timestamp"]}; {row["ID"]}; {row["delta"]}')
     timestamp = start_time_add_timestamp(start_time, row["timestamp"])
-    raw_value = float(int(row["delta"]))
-    delta = 0.0
-    match int(row["ID"]):
-      case 7:
-        delta = - (REF_VAL_FL - raw_value) + DAMPER_MID_ANGLE
-      case 8:
-        delta = (REF_VAL_FR - raw_value) + DAMPER_MID_ANGLE
-      case 11:
-        delta = - (REF_VAL_RL - raw_value) + DAMPER_MID_ANGLE
-      case 12:
-        delta = (REF_VAL_RR - raw_value) + DAMPER_MID_ANGLE
-      case 6:
-        delta = (REF_VAL_SW - raw_value) * R_TO_DEG_SW
 
-    if int(row["ID"]) != 6:
-      adc_angle = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, delta / 4096)
-      if int(row["ID"]) == 7 or int(row["ID"]) != 8:
-        try:
-          damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_front(adc_angle)
-        except IndexError:
-          continue
-      elif int(row["ID"]) == 11 or int(row["ID"]) != 12:
-        try:
-          damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_back(adc_angle)
-        except IndexError:
-          continue
-      angle = lerp(damper_angle_to_pos_low[0], damper_angle_to_pos_high[0], (adc_angle- damper_angle_to_pos_low[1]) / (damper_angle_to_pos_high[1] - damper_angle_to_pos_low[1]))
-    else:
-      angle = delta
-
+    angle = calc_wheel_position(row)
     point = (
       Point('damp')
       .tag("ID", f'{row["ID"]}')
@@ -95,7 +77,7 @@ def import_csv_damp(filepath, start_time):
     point = (
       Point('damp')
       .tag("ID", f'{row["ID"]}')
-      .field("raw_delta", raw_value)
+      .field("raw_delta", float(int(row["delta"])))
       .time(timestamp)
     )
     #points.append(point)
@@ -107,3 +89,45 @@ def import_csv_damp(filepath, start_time):
 
   endTime = datetime.datetime.now()
   print(f'DAMP: Imported {line_count} rows in {endTime - startTime}')
+
+
+def calc_wheel_position(row):
+  raw_value = float(int(row["delta"]))
+  angle_abs = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, raw_value / 4095)
+  angle = 0.0
+  position = 0.0
+
+  match int(row["ID"]):
+    case 7:
+      angle = -(angle_abs - REF_ANGLE_FL)
+    case 8:
+      angle = angle_abs - REF_ANGLE_FR
+    case 11:
+      angle = -(angle_abs - REF_ANGLE_RL)
+    case 12:
+      angle = (angle_abs - REF_ANGLE_RR)
+    case 6:
+      delta = (REF_VAL_SW - raw_value) * R_TO_DEG_SW
+
+  #print(f'rawvalue = {raw_value}, angle_abs = {angle_abs}, angle = {angle}')
+
+  if int(row["ID"]) != 6:
+    if int(row["ID"]) == 7 or int(row["ID"]) == 8:
+      try:
+        damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_front(angle)
+      except IndexError:
+        pass
+    elif int(row["ID"]) == 11 or int(row["ID"]) == 12:
+      try:
+        damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_back(angle)
+      except IndexError:
+        pass
+    try:
+      position = lerp(damper_angle_to_pos_low[0], damper_angle_to_pos_high[0],
+                 (angle - damper_angle_to_pos_low[1]) / (damper_angle_to_pos_high[1] - damper_angle_to_pos_low[1]))
+    except UnboundLocalError:
+      pass
+  else:
+    position = delta
+
+  return position
