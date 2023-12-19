@@ -4,7 +4,7 @@ from conf_influxdb import *
 import math
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry/23_11_05_Pszczolki/'
+path = 'C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry_data/23_11_05_Pszczolki/'
 
 GForce =  9.80665 # m/s2
 timestep = 0.04 # s
@@ -95,11 +95,11 @@ def linear_kalman(filefullpath):
             
         #    print(math.degrees(angular_position))
 
-            velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
-            velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
+        #    velocity_x_delta = (row['GyroX'] * math.cos(angular_position) + row['GForceX'] * timestep)
+        #    velocity_y_delta = row['GyroY'] * math.cos(angular_position) + row['GForceY'] * timestep
             
-        #    velocity_x_delta = row['GForceX'] * timestep
-        #    velocity_y_delta = row['GForceY'] * timestep 
+            velocity_x_delta = row['GForceX'] * timestep
+            velocity_y_delta = row['GForceY'] * timestep 
             
             velocity_x += velocity_x_delta
             velocity_y += velocity_y_delta
@@ -114,7 +114,7 @@ def linear_kalman(filefullpath):
             y = C @ x_new
            
             latitude_new = latitude_old + (velocity_y * timestep)/deg_to_met
-            longitude_new = longitude_old + (velocity_x * timestep)/(deg_to_met * math.cos(math.radians(latitude_new)))
+            longitude_new = longitude_old + (velocity_x * timestep)/(deg_to_met) #* math.cos(math.radians(latitude_new)))
             
             
             if ((row['Longitude'] == '') or (row['Latitude'] == '')):
@@ -137,20 +137,12 @@ def linear_kalman(filefullpath):
             longitude_old = longitude_new
             latitude_old = latitude_new
            
-            #latitude
+            #latitude, longitude
             point = (
               Point('gps')
-              .tag("ID", "gps_position")
-              .field("latitude", latitude_correction)
-              .time(row['Time'])
-            )
-            points.append(point)
-            
-            #longitude
-            point = (
-              Point('gps')
-              .tag("ID", "gps_position")
-              .field("longitude", longitude_correction)
+              .tag('ID', 'gps_position')
+              .field('latitude', latitude_correction)
+              .field('longitude', longitude_correction)
               .time(row['Time'])
             )
             points.append(point)
@@ -217,7 +209,7 @@ def linear_kalman(filefullpath):
               .time(row['Time'])
             )
             points.append(point)
-            
+           
    
             if row_counter % 555 == 0:
               write_api.write(bucket=bucket, org=org, record=points)
