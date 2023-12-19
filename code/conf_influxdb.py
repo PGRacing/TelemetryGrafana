@@ -2,10 +2,10 @@ import influxdb_client, os, time
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-token = "lBvDJzs-1cHSKwdqorD4_-xxs2yeg6CgvJcPkZNADNEibLh4xLFEhjZHUIzawXhTA52Xs0MuAPZ1944IMm7Lyw=="
+token = "LEIPXlfTBFWQ6HAcdyky81_eWDDPMNHvSTOU7E4FSbFOaaPCgCkgGGNIq6drweTuV8uv-sJpKNcGGdu7ygok5A=="
 org = "PGRacingTeam"
-url = "http://34.118.114.249/"
-bucket="telemetry"
+url = "http://185.237.15.60:8086/"
+bucket="telemetry-2023-11-05-Racebox"
 
 write_client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
 write_api = write_client.write_api(write_options=SYNCHRONOUS)
