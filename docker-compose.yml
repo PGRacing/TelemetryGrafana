@@ -7,10 +7,9 @@ services:
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=password
-      - DOCKER_INFLUXDB_INIT_ORG=pgracing
+      - DOCKER_INFLUXDB_INIT_PASSWORD=PGRacingTeamTelemetry
+      - DOCKER_INFLUXDB_INIT_ORG=PGRacingTeam
       - DOCKER_INFLUXDB_INIT_BUCKET=telemetry
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token
     ports:
       - "8086:8086"
   grafana:
