@@ -2,7 +2,7 @@ import csv
 import datetime
 import os
 
-from code import func_damp
+from code.func_damp import calc_wheel_position
 from code.main import paths
 from code.utils_timestamp import csv_timestamp_to_datetime
 from filterpy.kalman import KalmanFilter
@@ -62,7 +62,7 @@ def read_file(file_path):
             f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var)  # process noise
 
         for row in csv_reader:
-            value = func_damp.calc_wheel_position(row)
+            value = calc_wheel_position(row)
             index = 0
             match int(row["ID"]):
                 case 7:
