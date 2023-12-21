@@ -88,7 +88,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -194,7 +194,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -336,7 +336,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -360,7 +360,44 @@
           },
           "unit": "accMS2"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "acc_x x"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "acceleration x"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "acc_y y"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "acceleration y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "acc_z z"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "acceleration z"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 13,
@@ -430,7 +467,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -558,7 +595,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -568,6 +605,7 @@
             }
           },
           "decimals": 0,
+          "displayName": "speed racebox",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -653,7 +691,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -677,7 +715,44 @@
           },
           "unit": "rotdegs"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_x x"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gyro x"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_y y"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gyro y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_z z"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gyro z"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -737,6 +812,6 @@
   "timezone": "",
   "title": "Telemetry 2023-11-05",
   "uid": "ae67093c-f889-42a7-81e8-ca8c0925045b",
-  "version": 19,
+  "version": 35,
   "weekStart": ""
 }

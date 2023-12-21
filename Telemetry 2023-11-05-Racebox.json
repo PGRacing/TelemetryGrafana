@@ -18,14 +18,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
       },
       "fieldConfig": {
         "defaults": {
@@ -57,23 +57,25 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
+        "h": 18,
         "w": 10,
         "x": 0,
         "y": 0
       },
       "id": 1,
+      "maxDataPoints": 500000,
       "options": {
         "basemap": {
           "config": {},
           "name": "Layer 0",
+          "opacity": 0.9,
           "type": "osm-standard"
         },
         "controls": {
           "mouseWheelZoom": true,
           "showAttribution": true,
           "showDebug": false,
-          "showMeasure": false,
+          "showMeasure": true,
           "showScale": true,
           "showZoom": true
         },
@@ -126,10 +128,10 @@
               "arrow": 0,
               "style": {
                 "color": {
-                  "fixed": "dark-green"
+                  "fixed": "dark-red"
                 },
                 "lineWidth": 2,
-                "opacity": 0.7,
+                "opacity": 1,
                 "rotation": {
                   "fixed": 0,
                   "max": 360,
@@ -137,7 +139,7 @@
                   "mode": "mod"
                 },
                 "size": {
-                  "fixed": 2,
+                  "fixed": 5,
                   "max": 15,
                   "min": 2
                 },
@@ -161,8 +163,8 @@
             "location": {
               "mode": "auto"
             },
-            "name": "Layer 2",
-            "opacity": 0.4,
+            "name": "Layer 3",
+            "opacity": 1,
             "tooltip": true,
             "type": "route"
           }
@@ -175,17 +177,18 @@
           "id": "fit",
           "lat": 0,
           "lon": 0,
+          "shared": true,
           "zoom": 15
         }
       },
-      "pluginVersion": "10.2.1",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n\r\n|> pivot(columnKey: [\"_field\"], rowKey: [\"_time\"], valueColumn: \"_value\")\r\n\r\n|> duplicate(column: \"latitude\", as: \"lat\")\r\n|> duplicate(column: \"longitude\", as: \"lon\")",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n\r\n|> pivot(columnKey: [\"_field\"], rowKey: [\"_time\"], valueColumn: \"_value\")\r\n\r\n|> duplicate(column: \"latitude\", as: \"lat\")\r\n|> duplicate(column: \"longitude\", as: \"lon\")\r\n",
           "refId": "A"
         }
       ],
@@ -193,10 +196,7 @@
       "type": "geomap"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -219,13 +219,16 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -250,7 +253,32 @@
           },
           "unit": "degree"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "latitude gps_position"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "latitude"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "longitude gps_position"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "longitude"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -267,7 +295,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -277,7 +305,7 @@
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -285,10 +313,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -317,7 +342,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -342,7 +367,44 @@
           },
           "unit": "accMS2"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "acc_x x"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "acceleration x"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "acc_y y"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "acceleration y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "acc_z z"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "acceleration z"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -359,7 +421,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -369,7 +431,7 @@
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"acc\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"acc_x\" or r[\"_field\"] == \"acc_y\" or r[\"_field\"] == \"acc_z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"acc\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"acc_x\" or r[\"_field\"] == \"acc_y\" or r[\"_field\"] == \"acc_z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -377,10 +439,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -409,7 +468,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -432,9 +491,46 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "rotdegs"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_x x"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gyro x"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_y y"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gyro y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_z z"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gyro z"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -451,7 +547,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -461,7 +557,7 @@
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gyro\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"gyro_x\" or r[\"_field\"] == \"gyro_y\" or r[\"_field\"] == \"gyro_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gyro\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"gyro_x\" or r[\"_field\"] == \"gyro_y\" or r[\"_field\"] == \"gyro_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -471,7 +567,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
       },
       "fieldConfig": {
         "defaults": {
@@ -501,7 +597,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -524,7 +620,7 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "velocitykmh"
         },
         "overrides": [
           {
@@ -550,6 +646,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "speed velocity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "speed"
+              }
+            ]
           }
         ]
       },
@@ -560,6 +668,7 @@
         "y": 27
       },
       "id": 5,
+      "maxDataPoints": 50000,
       "options": {
         "legend": {
           "calcs": [],
@@ -568,7 +677,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -578,7 +687,7 @@
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -598,8 +707,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Telemetry 2023-11-05",
-  "uid": "a107d483-07be-4545-aee3-ddf1a904dc14",
-  "version": 6,
+  "title": "Telemetry 2023-11-05-Racebox",
+  "uid": "ae67093c-f889-42a7-81e8-ca8c0925045c",
+  "version": 36,
   "weekStart": ""
 }
