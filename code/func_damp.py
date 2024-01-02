@@ -1,8 +1,8 @@
 import csv
 from datetime import datetime
-from code.conf_influxdb import *
-from code.utils_timestamp import *
-from code.damp_ang_to_pos import *
+from conf_influxdb import *
+from utils_timestamp import *
+from damp_ang_to_pos import *
 
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
@@ -72,6 +72,8 @@ def import_csv_damp(filepath, start_time):
         # print(f'{row["timestamp"]}; {row["ID"]}; {row["delta"]}')
         timestamp = start_time_add_timestamp(start_time, row["timestamp"])
 
+        if line_count == 0:
+            setup_kalman_filter(float(int(row["delta"])))
         data = filter_data(calc_wheel_position(row), row["ID"])
         point = (
             Point('damp')
@@ -87,7 +89,7 @@ def import_csv_damp(filepath, start_time):
             .field("velocity", data[1])
             .time(timestamp)
         )
-        points.append(point)
+        #points.append(point)
 
         point = (
             Point('damp')
@@ -106,17 +108,18 @@ def import_csv_damp(filepath, start_time):
     print(f'DAMP: Imported {line_count} rows in {endTime - startTime}')
 
 
-def setup_kalman_filter():
+def setup_kalman_filter(delta):
+    global f
     # variance
     # for 0.00001 speed has too much noise
     # for 0.001 filter has too much delay  // in my opinion
     var = 0.0001
 
     for i in range(5):
-        f[i].x = np.array([[0.], [0.]])  # initial state (position and velocity)
+        f[i].x = np.array([[0.], [delta]])  # initial state (position and velocity)
         f[i].F = np.array([[1., 0.004], [0., 1.]])  # state transition matrix
         f[i].H = np.array([[1., 0.]])  # Measurement function
-        f[i].P = np.array([[1000., 0.], [1000., 0.]])  # covariance matrix
+        f[i].P = np.array([[1000., 0.], [0., 1000.]])  # covariance matrix
         # proces noise and measurement noise needs to be fine-tuned
         f[i].R = np.array([[var ** 2]])  # measurement noise
         f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var)  # process noise
@@ -139,7 +142,8 @@ def filter_data(data, ID):
     if index != -1:
         f[index].predict()
         f[index].update(data)
-        return float((f[index].x[0][0])), float((f[index].x[1][0]))
+        #print(f'{float(f[index].x[0][0])}, {float(f[index].x[1][0])}')
+        return float(f[index].x[0][0]), float(f[index].x[1][0])
     else:
         return data, 0.0
 
