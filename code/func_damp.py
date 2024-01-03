@@ -73,7 +73,7 @@ def import_csv_damp(filepath, start_time):
         timestamp = start_time_add_timestamp(start_time, row["timestamp"])
 
         if line_count == 0:
-            setup_kalman_filter(float(int(row["delta"])))
+            setup_kalman_filter()
         data = filter_data(calc_wheel_position(row), row["ID"])
         point = (
             Point('damp')
@@ -108,7 +108,7 @@ def import_csv_damp(filepath, start_time):
     print(f'DAMP: Imported {line_count} rows in {endTime - startTime}')
 
 
-def setup_kalman_filter(delta):
+def setup_kalman_filter():
     global f
     # variance
     # for 0.00001 speed has too much noise
@@ -116,7 +116,7 @@ def setup_kalman_filter(delta):
     var = 0.0001
 
     for i in range(5):
-        f[i].x = np.array([[0.], [delta]])  # initial state (position and velocity)
+        f[i].x = np.array([[0.], [0.]])  # initial state (position and velocity)
         f[i].F = np.array([[1., 0.004], [0., 1.]])  # state transition matrix
         f[i].H = np.array([[1., 0.]])  # Measurement function
         f[i].P = np.array([[1000., 0.], [0., 1000.]])  # covariance matrix
