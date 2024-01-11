@@ -38,9 +38,13 @@ def import_csv_gps(filepath):
   points = []
   new_row = ''
   startTime = datetime.datetime.now()
+  previous_timestamp = None
+  previous_csv_timestamp = None
 
   for row in csv_reader:
+    
     if row["timestamp"] and row["date"]:
+      #start_timestamp = str(correct_gp_start_time(row['timestamp']))
       start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
       break
 
@@ -59,7 +63,14 @@ def import_csv_gps(filepath):
        continue
     
     org_timestamp = row["timestamp"]
-    timestamp = start_time_add_timestamp(start_time, org_timestamp)
+    if line_count < 1:
+        init_time = csv_timestamp_to_timedelta(row["timestamp"])
+        first_timestamp = correct_init_time(init_time)
+        timestamp = start_time + first_timestamp
+    else:
+        timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp)
+    previous_timestamp = timestamp
+    previous_csv_timestamp = org_timestamp
     # transformation x1 = int(x/100) + ((x%100)/60)
     lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
     lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)

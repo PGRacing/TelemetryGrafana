@@ -48,7 +48,8 @@ def kalman(filefullpath):
     row_counter += 1
     total_rows_calculated += 1
 
-    timestamp = time_correction(row['Time'])
+    #timestamp = time_correction(row['Time'])
+    timestamp = row['Time']
 
     row['GForceX'] = float(row['GForceX']) * GForce 
     row['GForceY'] = float(row['GForceY']) * GForce 
@@ -215,7 +216,7 @@ def kalman_one_value(filefullpath):
     signal_loss = False
     row_counter += 1
     total_rows_calculated += 1
-    timestamp = time_correction(row['Time'])
+    timestamp = row['Time']
     #print(f'File: {file_counter}, Row: {row_counter}')
 
     row['GForceX'] = float(row['GForceX']) * GForce 
@@ -350,18 +351,6 @@ def kalman_one_value(filefullpath):
   print(f'Import of file number {file_counter} finished in {endTime - startTime}')
 
 
-def time_correction(row):
-  day = row[:11]
-  hour = int(row[11:13])
-  minutes = int(row[14:16])
-  sec = float(row[17:23]) + 12.3
-  if sec >= 60.:
-     minutes += 1
-     sec -= 60.
-  if minutes >= 60:
-     hour += 1
-     minutes -= 60
-  return day + str(format(hour, "02d")) + ':' + str(format(minutes, "02d")) + ':' + str(format(sec, ".3f")) + 'Z'
 
 
 

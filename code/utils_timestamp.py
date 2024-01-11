@@ -43,7 +43,9 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     micros = int(gps_timestamp[7:])
     gps_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=micros)
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
-    return gps_datetime - timedelta
+    delta = timedelta.total_seconds() * 0.9465
+    dtdelta = datetime.timedelta(seconds=delta)
+    return gps_datetime - dtdelta
 
 def start_time_add_timestamp(start_time, csv_timestamp):
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
@@ -52,3 +54,40 @@ def start_time_add_timestamp(start_time, csv_timestamp):
 def start_time_add_millis_timestamp(start_time, csv_millis_timestamp):
     timedelta = csv_millis_timestamp_to_timedelta(csv_millis_timestamp)
     return start_time + timedelta
+
+def correct_csv_timestamp(previous_csv_timestamp, current_csv_timestamp, previous_timestamp):
+    # STRINGS: previous_csv_timestamp, current_csv_timestamp
+    # DATETIME: previous_timestamp
+    prev_timedelta = csv_timestamp_to_timedelta(previous_csv_timestamp)
+    curr_timedelta = csv_timestamp_to_timedelta(current_csv_timestamp)
+    timestamp_delta_csv = curr_timedelta - prev_timedelta
+    total_seconds = timestamp_delta_csv.total_seconds()
+    total_seconds *= 0.9465
+    timedelta = datetime.timedelta(seconds=total_seconds)
+    return previous_timestamp + timedelta
+
+
+def correct_csv_timestamp_millis(previous_csv_timestamp, current_csv_timestamp, previous_timestamp):
+    # STRING: previous_csv_timestamp
+    # DATETIME: previous_timestamp, current_csv_timestamp
+    previous_csv_timestamp = csv_millis_timestamp_to_timedelta(previous_csv_timestamp)
+    timestamp_delta_csv = current_csv_timestamp - previous_csv_timestamp
+    total_seconds = timestamp_delta_csv.total_seconds()
+    total_seconds *= 0.9465
+    delta = datetime.timedelta(seconds=total_seconds)
+    return previous_timestamp + delta
+
+def correct_init_time(init_time):
+    seconds = init_time.total_seconds() * 0.9465
+    corrected_start_time = datetime.timedelta(seconds=seconds)
+    return corrected_start_time
+
+def correct_init_time_millis(init_time):
+    init_time *= 0.9465
+    corrected_start_time = datetime.timedelta(milliseconds=init_time)
+    return corrected_start_time
+
+def correct_gp_start_time(time):
+    time2 = csv_timestamp_to_timedelta(time)
+    start_time = correct_init_time(time2)
+    return start_time

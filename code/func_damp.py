@@ -1,8 +1,8 @@
 import csv
 from datetime import datetime
-from conf_influxdb import *
-from utils_timestamp import *
-from damp_ang_to_pos import *
+from code.conf_influxdb import *
+from code.utils_timestamp import *
+from code.damp_ang_to_pos import *
 
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
@@ -67,14 +67,23 @@ def import_csv_damp(filepath, start_time):
     line_count = 0
     points = []
     startTime = datetime.datetime.now()
+    previous_timestamp = None
+    previous_csv_timestamp = None
 
     for row in csv_reader:
         # print(f'{row["timestamp"]}; {row["ID"]}; {row["delta"]}')
-        timestamp = start_time_add_timestamp(start_time, row["timestamp"])
+        if line_count < 1:
+            init_time = csv_timestamp_to_timedelta(row["timestamp"])
+            first_timestamp = correct_init_time(init_time)
+            timestamp = start_time + first_timestamp
+        else:
+            timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp)
 
         if line_count == 0:
             setup_kalman_filter()
         data = filter_data(calc_wheel_position(row), row["ID"])
+        previous_timestamp = timestamp
+        previous_csv_timestamp = row["timestamp"]
         point = (
             Point('damp')
             .tag("ID", f'{row["ID"]}')
