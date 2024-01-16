@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 from conf_influxdb import *
+from func_kalman import *
 import math
 from datetime import datetime
 from filterpy.kalman import KalmanFilter
@@ -12,7 +13,7 @@ path = 'C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry_data/23_11_05_Ps
 GForce =  9.80665 # m/s2
 timestep = 0.04 # s
 file_counter = 0
-total_rows_calculated = 0
+
 
 # to be set every track change
 approx_lon = 18.712
@@ -26,12 +27,213 @@ def find_racebox(filepath):
   global file_counter
   for i in range (1, 16):
     file_counter += 1
-    kalman_one_value(filepath + 'RB-' + str(i) + '.csv')
-  print(f'Successfully calculated {total_rows_calculated} lines!')
+    #print(f'file {file_counter}')
+    open_file(filepath + 'RB-' + str(i) + '.csv')
+    #kalman_one_value(filepath + 'RB-' + str(i) + '.csv')
+    #angular_acceleration(filepath + 'RB-' + str(i) + '.csv')
+  print(f'Successfully imported {file_counter} files!')
+
+def open_file(filefullpath):
+  file = open(filefullpath, 'r')
+  csvreader_object = csv.reader(file)
+  for i in range (1, 13):
+      next(csvreader_object)
+      
+  data = csv.DictReader(file)
+  points = []
+  startTime = datetime.now()
+  row_counter = 0
+
+  f_gps = list(range(3))
+  f_acc = list(range(3))
+
+  for row in data:
+    gyro_x = float(row['GyroX'])
+    gyro_y = float(row['GyroY'])
+    gyro_z = float(row['GyroZ'])
+
+    GForceX = float(row['GForceX']) * GForce 
+    GForceY = float(row['GForceY']) * GForce 
+    GForceZ = float(row['GForceZ']) * GForce
+
+    timestamp = row['Time']
+
+    f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter)
+    f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, f_gps[0].x[1][0], f_gps[1].x[1][0], f_gps[2].x[1][0], row_counter)
+
+    # latitude and longitude
+    point = (
+      Point('gps')
+      .tag('ID', 'gps_position')
+      .field('latitude', float(f_gps[0].x[0][0]))
+      .field('longitude', float(f_gps[1].x[0][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # speed
+    point = (
+        Point('spd')
+        .tag('Record', "velocity")
+        .field('speed', float(row['Speed']))
+        .time(timestamp)
+        )
+    points.append(point)
     
+    # acc_x
+    point = (
+      Point('acc')
+      .tag("axis", "x")
+      .field("acc_x", float(f_acc[0].x[0][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+    
+    # acc_y
+    point = (
+      Point('acc')
+      .tag("axis", "y")
+      .field("acc_y", float(f_acc[1].x[0][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+    
+    # acc_z
+    point = (
+      Point('acc')
+      .tag("axis", "z")
+      .field("acc_z", float(f_acc[2].x[0][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+    row_counter += 1
+
+    if row_counter % 555 == 0:
+      write_api.write(bucket=bucket, org=org, record=points)
+      points.clear()
+
+  
+
+  endTime = datetime.now()
+  print(f'Calculated file number {file_counter} in {endTime - startTime}')
+
+
+def calculate_angles(f_acc, yaw_previous):
+   roll_angle = math.atan2(f_acc[1].x[0][0], f_acc[2].x[0][0])
+   pitch_angle = math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2) + (f_acc[2].x[0][0])**2)
+   yaw_angle = yaw_previous + 
+
+
+
+def angular_acceleration(filefullpath):
+  file = open(filefullpath, 'r')
+  csvreader_object = csv.reader(file)
+  for i in range (1, 13):
+      next(csvreader_object)
+      
+  data = csv.DictReader(file)
+  row_counter = 0
+  points = []
+  startTime = datetime.now()
+
+  for row in data:
+    row['GyroX'] = float(row['GyroX'])
+    row['GyroY'] = float(row['GyroY'])
+    row['GyroZ'] = float(row['GyroZ'])
+
+    if row_counter == 0:
+      previous_value_x = 0.
+      previous_value_y = 0.
+      previous_value_z = 0.
+
+    angular_acc_x = (row['GyroX'] - previous_value_x)/timestep
+    angular_acc_y = (row['GyroY'] - previous_value_y)/timestep
+    angular_acc_z = (row['GyroZ'] - previous_value_z)/timestep
+
+    previous_value_x = row['GyroX']
+    previous_value_y = row['GyroY']
+    previous_value_z = row['GyroZ']
+
+    # gyro_x
+    point = (
+      Point('gyro')
+      .tag('axis', 'x')
+      .field('gyro_x', row["GyroX"])
+      .time(row['Time'])
+    )
+    points.append(point)
+
+    # angular acceleration x
+    point = (
+      Point('angular_acc')
+      .tag('axis', 'x')
+      .field('angular_acc_x', angular_acc_x)
+      .time(row['Time'])
+    )
+    points.append(point)
+    
+    # gyro_y
+    point = (
+      Point('gyro')
+      .tag('axis', 'y')
+      .field('gyro_y', row["GyroY"])
+      .time(row['Time'])
+    )
+    points.append(point)
+
+    # angular acceleration y
+    point = (
+      Point('angular_acc')
+      .tag('axis', 'y')
+      .field('angular_acc_y', angular_acc_y)
+      .time(row['Time'])
+    )
+    points.append(point)
+    
+    # gyro_z
+    point = (
+      Point('gyro')
+      .tag('axis', 'z')
+      .field('gyro_z', row["GyroZ"])
+      .time(row['Time'])
+    )
+    points.append(point)
+
+    # angular acceleration z
+    point = (
+      Point('angular_acc')
+      .tag('axis', 'z')
+      .field('angular_acc_z', angular_acc_z)
+      .time(row['Time'])
+    )
+    points.append(point)
+
+    if row_counter % 555 == 0:
+      write_api.write(bucket=bucket, org=org, record=points)
+      points.clear()
+
+    row_counter += 1
+  endTime = datetime.now()
+  print(f'GYRO: calculations finished in {endTime - startTime}')
+
+def import_acc(filefullpath):
+  file = open(filefullpath, 'r')
+  csvreader_object = csv.reader(file)
+  for i in range (1, 13):
+      next(csvreader_object)
+      
+  data = csv.DictReader(file)
+  row_counter = 0
+  points = []
+  startTime = datetime.now()
+  for row in data:
+    row['GForceX'] = float(row['GForceX']) * GForce 
+    row['GForceY'] = float(row['GForceY']) * GForce 
+    row['GForceZ'] = float(row['GForceZ']) * GForce
+    
+    acc_x, acc_y, acc_z = kalman_acc(float(row['GForceX']), row['GForceY'], row['GForceX'], )
 
 def kalman(filefullpath):
-  global total_rows_calculated
   file = open(filefullpath, 'r')
   csvreader_object = csv.reader(file)
   for i in range (1, 13):
@@ -51,13 +253,7 @@ def kalman(filefullpath):
     #timestamp = time_correction(row['Time'])
     timestamp = row['Time']
 
-    row['GForceX'] = float(row['GForceX']) * GForce 
-    row['GForceY'] = float(row['GForceY']) * GForce 
-    row['GForceZ'] = float(row['GForceZ']) * GForce
-
-    row['GyroX'] = float(row['GyroX'])
-    row['GyroY'] = float(row['GyroY'])
-    row['GyroZ'] = float(row['GyroZ'])
+    
 
     if row['Latitude'] != '' and row['Longitude'] != '':
       row['Latitude'] = float(row['Latitude'])
@@ -136,33 +332,6 @@ def kalman(filefullpath):
         )
     points.append(point)
     
-    # gyro_x
-    point = (
-      Point('gyro')
-      .tag("axis", "x")
-      .field("gyro_x", row["GyroX"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # gyro_y
-    point = (
-      Point('gyro')
-      .tag("axis", "y")
-      .field("gyro_y", row["GyroY"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # gyro_z
-    point = (
-      Point('gyro')
-      .tag("axis", "z")
-      .field("gyro_z", row["GyroZ"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
     # acc_x
     point = (
       Point('acc')
@@ -195,161 +364,9 @@ def kalman(filefullpath):
       points.clear()
   
   endTime = datetime.now()
-  print(f'Import of file number {file_counter} finished in {endTime - startTime}')
+  print(f'GPS: import finished in {endTime - startTime}')
 
   
-def kalman_one_value(filefullpath):
-  global total_rows_calculated
-  file = open(filefullpath, 'r')
-  csvreader_object = csv.reader(file)
-  for i in range (1, 13):
-      next(csvreader_object)
-      
-  data = csv.DictReader(file)
-  row_counter = 0
-  points = []
-
-  startTime = datetime.now()
-
-  f = list(range(2))
-  for row in data:
-    signal_loss = False
-    row_counter += 1
-    total_rows_calculated += 1
-    timestamp = row['Time']
-    #print(f'File: {file_counter}, Row: {row_counter}')
-
-    row['GForceX'] = float(row['GForceX']) * GForce 
-    row['GForceY'] = float(row['GForceY']) * GForce 
-    row['GForceZ'] = float(row['GForceZ']) * GForce
-
-    row['GyroX'] = float(row['GyroX'])
-    row['GyroY'] = float(row['GyroY'])
-    row['GyroZ'] = float(row['GyroZ'])
-
-    if row['Latitude'] != '' and row['Longitude'] != '':
-      row['Latitude'] = float(row['Latitude'])
-      row['Longitude'] = float(row['Longitude'])
-    elif row['Latitude'] == '':
-      row['Latitude'] = 0.0
-      signal_loss = True
-    elif row['Longitude'] != '':
-       row['Longitude'] = 0.0
-       signal_loss = True
-  
-
-    if row_counter == 1:
-      var = 0.0000001
-      for i in range(2):
-        f[i] = KalmanFilter(dim_x=2, dim_z=1)
-        if i == 0:
-          f[i].x = np.array([[row['Latitude']], 
-                              [0.]])  # initial state (position and velocity)
-        else:
-          f[i].x = np.array([[row['Longitude']], 
-                              [0.]])
-        
-        f[i].F = np.array([[1., timestep], 
-                            [0., 1.]])  # state transition matrix
-        f[i].H = np.array([[1., 0.]])  # Measurement function
-        f[i].P = np.array([[10., 0.], 
-                            [0., 10.]])  # covariance matrix
-        # proces noise and measurement noise needs to be fine tuned
-        # measurement noise smaller -> kalman filter follows raw data more closely
-        # process noise bigger -> kalman filter follows raw data more closely
-        # but this need to be checked
-        f[i].R = np.array([[var]])  # measurement noise
-        f[i].Q = Q_discrete_white_noise(dim=2, dt=timestep, var=var)  # process noise
-    
-    if signal_loss == True:
-      f[0].predict()
-      f[1].predict()
-    else:
-      f[0].predict()
-      f[0].update(row['Latitude'])
-      f[1].predict()
-      f[1].update(row['Longitude'])
-
-    # latitude and longitude
-    point = (
-      Point('gps')
-      .tag('ID', 'gps_position')
-      .field('latitude', float(f[0].x[0][0]))
-      .field('longitude', float(f[1].x[0][0]))
-      .time(row['Time'])
-    )
-    points.append(point)
-
-    # speed
-    point = (
-        Point('spd')
-        .tag('Record', "velocity")
-        .field('speed', float(row['Speed']))
-        .time(timestamp)
-        )
-    points.append(point)
-    
-    # gyro_x
-    point = (
-      Point('gyro')
-      .tag("axis", "x")
-      .field("gyro_x", row["GyroX"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # gyro_y
-    point = (
-      Point('gyro')
-      .tag("axis", "y")
-      .field("gyro_y", row["GyroY"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # gyro_z
-    point = (
-      Point('gyro')
-      .tag("axis", "z")
-      .field("gyro_z", row["GyroZ"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # acc_x
-    point = (
-      Point('acc')
-      .tag("axis", "x")
-      .field("acc_x", row["GForceX"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # acc_y
-    point = (
-      Point('acc')
-      .tag("axis", "y")
-      .field("acc_y", row["GForceY"])
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # acc_z
-    point = (
-      Point('acc')
-      .tag("axis", "z")
-      .field("acc_z", row["GForceZ"])
-      .time(timestamp)
-    )
-    points.append(point)
-
-    if row_counter % 555 == 0:
-      write_api.write(bucket=bucket, org=org, record=points)
-      points.clear()
-
-  endTime = datetime.now()
-  print(f'Import of file number {file_counter} finished in {endTime - startTime}')
-
 
 
 
