@@ -40,6 +40,42 @@ def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, velocity_z, row_n
 
   return f
 
+def kalman_gyro(f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number):
+  timestep = 0.04
+  var = 0.0001
+  alfa = math.degrees(math.atan(f_acc[2].x[0][0]/f_acc[0].x[0][0]))
+  if row_number == 0:
+    for i in range(3):
+      f_gyro[i] = KalmanFilter(dim_x=2, dim_z=1)
+      if i == 0:
+        f_gyro[i].x = np.array([[alfa], 
+                            [gyro_x]])  # initial state (position and velocity)
+      elif i == 1:
+        f_gyro[i].x = np.array([[alfa], 
+                            [gyro_y]])
+      else:
+        f_gyro[i].x = np.array([[alfa],
+                            [gyro_z]])
+      
+      f_gyro[i].F = np.array([[1., timestep], 
+                          [0., 1.]])  # state transition matrix
+      f_gyro[i].H = np.array([[1., 0.]])  # Measurement function
+      f_gyro[i].P = np.array([[10., 0.], 
+                          [0., 10.]])  # covariance matrix
+      f_gyro[i].R = np.array([[var]])  # measurement noise
+      f_gyro[i].Q = Q_discrete_white_noise(dim=2, dt=timestep, var=var)  # process noise
+
+
+  f_gyro[0].predict()
+  f_gyro[0].update(gyro_x)
+  f_gyro[1].predict()
+  f_gyro[1].update(gyro_y)
+  f_gyro[2].predict()
+  f_gyro[2].update(gyro_z)
+
+  return f_gyro
+
+
 def kalman_gps(f, lat, lon, alt, row_number):
   timestep = 0.04
   GForce = 9.80665

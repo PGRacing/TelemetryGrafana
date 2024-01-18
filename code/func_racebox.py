@@ -46,6 +46,12 @@ def open_file(filefullpath):
 
   f_gps = list(range(3))
   f_acc = list(range(3))
+  f_gyro = list(range(3))
+  
+  ang_vel_prev_x = 0.
+  ang_vel_prev_y = 0.
+  ang_vel_prev_z = 0.
+
 
   for row in data:
     gyro_x = float(row['GyroX'])
@@ -60,6 +66,14 @@ def open_file(filefullpath):
 
     f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter)
     f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, f_gps[0].x[1][0], f_gps[1].x[1][0], f_gps[2].x[1][0], row_counter)
+    f_gyro = kalman_gyro(f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter)
+    ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+
+
+    #roll, pitch = calculate_angles(f_acc)
+    ang_vel_prev_x = f_gyro[0].x[1][0]
+    ang_vel_prev_y = f_gyro[1].x[1][0]
+    ang_vel_prev_z = f_gyro[2].x[1][0]
 
     # latitude and longitude
     point = (
@@ -106,9 +120,64 @@ def open_file(filefullpath):
       .time(timestamp)
     )
     points.append(point)
+
+      # gyro_x
+    point = (
+      Point('gyro')
+      .tag("axis", "x")
+      .field("gyro_x", float(f_gyro[0].x[1][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+    
+    # gyro_y
+    point = (
+      Point('gyro')
+      .tag("axis", "y")
+      .field("gyro_y", float(f_gyro[1].x[1][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+    
+    # gyro_z
+    point = (
+      Point('gyro')
+      .tag("axis", "z")
+      .field("gyro_z", float(f_gyro[2].x[1][0]))
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # ang acc x
+    point = (
+      Point('angular_acc')
+      .tag("axis", "x")
+      .field("ang_acc_x", ang_acc_x)
+      .time(timestamp)
+    )
+    points.append(point)
+    
+    # ang acc x
+    point = (
+      Point('angular_acc')
+      .tag("axis", "y")
+      .field("ang_acc_y", ang_acc_y)
+      .time(timestamp)
+    )
+    points.append(point)
+    
+    # ang acc x
+    point = (
+      Point('angular_acc')
+      .tag("axis", "z")
+      .field("ang_acc_z", ang_acc_z)
+      .time(timestamp)
+    )
+    points.append(point)
+
     row_counter += 1
 
-    if row_counter % 555 == 0:
+    if row_counter % 400 == 0:
       write_api.write(bucket=bucket, org=org, record=points)
       points.clear()
 
@@ -118,103 +187,34 @@ def open_file(filefullpath):
   print(f'Calculated file number {file_counter} in {endTime - startTime}')
 
 
-def calculate_angles(f_acc, yaw_previous):
-   roll_angle = math.atan2(f_acc[1].x[0][0], f_acc[2].x[0][0])
-   pitch_angle = math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2) + (f_acc[2].x[0][0])**2)
-   yaw_angle = yaw_previous + 
+def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
+  delta_x = float(f_gyro[0].x[1][0]) - prev_x
+  delta_y = float(f_gyro[1].x[1][0]) - prev_y
+  delta_z = float(f_gyro[2].x[1][0]) - prev_z
+
+  ang_acc_x = delta_x/timestep
+  ang_acc_y = delta_y/timestep
+  ang_acc_z = delta_z/timestep
+
+  return ang_acc_x, ang_acc_y, ang_acc_z
+
+
+def calculate_angles(f_acc):
+  roll_angle = math.atan2(f_acc[1].x[0][0], f_acc[2].x[0][0])
+  pitch_angle = math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2) + (f_acc[2].x[0][0])**2)
+  #yaw_angle = yaw_previous + 
+  return roll_angle, pitch_angle
 
 
 
-def angular_acceleration(filefullpath):
-  file = open(filefullpath, 'r')
-  csvreader_object = csv.reader(file)
-  for i in range (1, 13):
-      next(csvreader_object)
-      
-  data = csv.DictReader(file)
-  row_counter = 0
-  points = []
-  startTime = datetime.now()
+def angular_values(roll_delta, pitch_delta):
+  # based on acc data
+  angular_acc_x = (roll_delta/timestep)**2
+  angular_acc_y = (pitch_delta/timestep)**2
+  #angular_acc_z = 
 
-  for row in data:
-    row['GyroX'] = float(row['GyroX'])
-    row['GyroY'] = float(row['GyroY'])
-    row['GyroZ'] = float(row['GyroZ'])
 
-    if row_counter == 0:
-      previous_value_x = 0.
-      previous_value_y = 0.
-      previous_value_z = 0.
 
-    angular_acc_x = (row['GyroX'] - previous_value_x)/timestep
-    angular_acc_y = (row['GyroY'] - previous_value_y)/timestep
-    angular_acc_z = (row['GyroZ'] - previous_value_z)/timestep
-
-    previous_value_x = row['GyroX']
-    previous_value_y = row['GyroY']
-    previous_value_z = row['GyroZ']
-
-    # gyro_x
-    point = (
-      Point('gyro')
-      .tag('axis', 'x')
-      .field('gyro_x', row["GyroX"])
-      .time(row['Time'])
-    )
-    points.append(point)
-
-    # angular acceleration x
-    point = (
-      Point('angular_acc')
-      .tag('axis', 'x')
-      .field('angular_acc_x', angular_acc_x)
-      .time(row['Time'])
-    )
-    points.append(point)
-    
-    # gyro_y
-    point = (
-      Point('gyro')
-      .tag('axis', 'y')
-      .field('gyro_y', row["GyroY"])
-      .time(row['Time'])
-    )
-    points.append(point)
-
-    # angular acceleration y
-    point = (
-      Point('angular_acc')
-      .tag('axis', 'y')
-      .field('angular_acc_y', angular_acc_y)
-      .time(row['Time'])
-    )
-    points.append(point)
-    
-    # gyro_z
-    point = (
-      Point('gyro')
-      .tag('axis', 'z')
-      .field('gyro_z', row["GyroZ"])
-      .time(row['Time'])
-    )
-    points.append(point)
-
-    # angular acceleration z
-    point = (
-      Point('angular_acc')
-      .tag('axis', 'z')
-      .field('angular_acc_z', angular_acc_z)
-      .time(row['Time'])
-    )
-    points.append(point)
-
-    if row_counter % 555 == 0:
-      write_api.write(bucket=bucket, org=org, record=points)
-      points.clear()
-
-    row_counter += 1
-  endTime = datetime.now()
-  print(f'GYRO: calculations finished in {endTime - startTime}')
 
 def import_acc(filefullpath):
   file = open(filefullpath, 'r')
