@@ -2,6 +2,9 @@ import csv
 from datetime import datetime
 from code.conf_influxdb import *
 from code.utils_timestamp import *
+from code.test_functions.filters import low_pass_filter, get_alpha
+
+low_pass_filter_alpha_4Hz = get_alpha(0.004, 4)
 
 def import_csv_abs(filepath, start_time):
   # CSV column names as following:
@@ -14,6 +17,7 @@ def import_csv_abs(filepath, start_time):
   startTime = datetime.datetime.now()
   previous_timestamp = None
   previous_csv_timestamp = None
+  prev_speed = [0.0,0.0]
 
   for row in csv_reader:
     #print(f'{row["timestamp"]}; {row["ID"]}; {row["speed"]}')
@@ -27,10 +31,13 @@ def import_csv_abs(filepath, start_time):
     if line_count % 2 == 1:
       previous_timestamp = timestamp
       previous_csv_timestamp = row["timestamp"]
+
+    speed = low_pass_filter(float(row["speed"])*2.0, prev_speed[int(row["ID"])-4], low_pass_filter_alpha_4Hz)
+    prev_speed[int(row["ID"])-4] = speed
     point = (
       Point('abs')
       .tag("ID", f'{row["ID"]}')
-      .field("speed", float(row["speed"]) * 2.0)
+      .field("speed", speed)
       .time(timestamp)
     )
     points.append(point)
