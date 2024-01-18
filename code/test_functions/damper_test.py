@@ -9,7 +9,6 @@ from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 
 file_to_test = "DAMP0101-12.csv"
 low_pass_filter_alpha_50Hz = 0.55
@@ -26,8 +25,6 @@ def test_import_csv_damp():
             break
 
 
-def low_pass_filter(value, last_value, alpha):
-    return alpha * value + (1 - alpha) * last_value
 
 
 def read_file(file_path):
