@@ -92,13 +92,14 @@ def import_csv_damp(filepath, start_time):
         )
         points.append(point)
 
+        # wheel travel in m/s
         point = (
             Point('damp')
             .tag("ID", f'{row["ID"]}')
-            .field("velocity", data[1])
+            .field("velocity", data[1]/1000.0)
             .time(timestamp)
         )
-        #points.append(point)
+        points.append(point)
 
         point = (
             Point('damp')
