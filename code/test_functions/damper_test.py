@@ -14,6 +14,9 @@ file_to_test = "DAMP0101-12.csv"
 low_pass_filter_alpha_50Hz = 0.55
 low_pass_filter_alpha_25Hz = 0.38
 
+R_TO_DEG_SW = 0.1
+REF_VAL_SW = 2380.0
+
 
 def test_import_csv_damp():
     for path in paths:
@@ -21,11 +24,48 @@ def test_import_csv_damp():
             # for i in range(1,20):
             # threading.Thread(target=read_file, args=(path + "DAMP0101-" + str(i) + ".csv",)).start()
             # read_file(path + "DAMP0101-" + str(i) + ".csv")
+            calc_variance(path + file_to_test)
             read_file(path + file_to_test)
             break
 
+def calc_variance(file_path):
+    with (open(file_path, "r") as file):
+        csv_reader = csv.DictReader(file)
+        wheels_positions = []
+        for i in range(5):
+            wheels_positions.append([])
+        for row in csv_reader:
+            value = calc_wheel_position(row)
+            index = 0
+            match int(row["ID"]):
+                case 7:
+                    index = 0
+                case 8:
+                    index = 1
+                case 11:
+                    index = 2
+                case 12:
+                    index = 3
+                case 6:
+                    index = 4
 
+            wheels_positions[index].append(value)
+            if len(wheels_positions[0]) > 1000 and \
+                len(wheels_positions[1]) > 1000 and\
+                len(wheels_positions[2]) > 1000 and\
+                len(wheels_positions[3]) > 1000 and\
+                len(wheels_positions[4]) > 1000:
+                break
 
+        print(f"Variance FL: {np.var(wheels_positions[0])}")
+        print(f"Variance FR: {np.var(wheels_positions[1])}")
+        print(f"Variance RL: {np.var(wheels_positions[2])}")
+        print(f"Variance RR: {np.var(wheels_positions[3])}")
+        print(f"Variance SW: {np.var(wheels_positions[4])}")
+        plt.plot(wheels_positions[0], label="FL")
+        plt.plot(wheels_positions[4], label="SW")
+
+        plt.show()
 
 def read_file(file_path):
     with (open(file_path, "r") as file):
