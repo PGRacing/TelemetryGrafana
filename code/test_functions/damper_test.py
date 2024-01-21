@@ -24,7 +24,7 @@ def test_import_csv_damp():
             # for i in range(1,20):
             # threading.Thread(target=read_file, args=(path + "DAMP0101-" + str(i) + ".csv",)).start()
             # read_file(path + "DAMP0101-" + str(i) + ".csv")
-            calc_variance(path + file_to_test)
+            #calc_variance(path + file_to_test)
             read_file(path + file_to_test)
             break
 
@@ -84,7 +84,12 @@ def read_file(file_path):
         # for 0.00001 speed has to much noise
         # for 0.001 filter has to much delay  // in my opinion
 
-        var = 0.0001
+        #variance of raw data
+        var = 0.014
+        #variance of process noise
+        # 0.5 * a_m < var_a <  a_m
+        # a_m = 530 - calculated from 10:47:21:818 : 10:47:20:881
+        var_a = 0.5 * 530
         for i in range(4):
             f[i] = KalmanFilter(dim_x=2, dim_z=1)
             f[i].x = np.array([[0.], [0.]])  # initial state (position and velocity)
@@ -95,8 +100,8 @@ def read_file(file_path):
             # measurement noise smaller -> kalman filter follows raw data more closely
             # process noise bigger -> kalman filter follows raw data more closely
             # but this need to be checked
-            f[i].R = np.array([[var**2]])  # measurement noise
-            f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var)  # process noise
+            f[i].R = np.array([[var]])  # measurement noise
+            f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var_a)  # process noise
 
         for row in csv_reader:
             value = calc_wheel_position(row)
@@ -122,7 +127,8 @@ def read_file(file_path):
             wheels_timestamps[index].append(
                 csv_timestamp_to_datetime(datetime.datetime(year=2023, month=11, day=5), row["timestamp"]))
             wheels_positions[index].append(float((f[index].x[0][0])))
-            wheels_positions[index + 4].append(float((f[index].x[1][0])))
+            #wheels_positions[index + 4].append(float((f[index].x[1][0])))
+            wheels_positions[index + 4].append(value)
                 #wheels_positions[index+1].append(low_pass_filter(value, wheels_positions[index+1][-1], low_pass_filter_alpha_50Hz))
                 #wheels_positions[index+1].append(value)
 
@@ -146,10 +152,11 @@ def read_file(file_path):
         # plt.plot(wheels_timestamps[2], wheels_positions[2], label="low pass 25 Hz")
         # plt.plot(wheels_timestamps[3], wheels_positions[3], label="kalman")
 
+        plt.plot(wheels_timestamps[0], wheels_positions[4], label="FL raw")
         plt.plot(wheels_timestamps[0], wheels_positions[0], label="FL")
-        plt.plot(wheels_timestamps[1], wheels_positions[1], label="FR")
-        plt.plot(wheels_timestamps[2], wheels_positions[2], label="RL")
-        plt.plot(wheels_timestamps[3], wheels_positions[3], label="RR")
+        #plt.plot(wheels_timestamps[1], wheels_positions[1], label="FR")
+        #plt.plot(wheels_timestamps[2], wheels_positions[2], label="RL")
+        #plt.plot(wheels_timestamps[3], wheels_positions[3], label="RR")
 
         #plt.plot(wheels_timestamps[0], wheels_positions[4], label="FL Speed")
         plt.legend(title='Wheel:')
