@@ -46,5 +46,6 @@ def import_csv_abs(filepath, start_time):
       points.clear()
     line_count += 1
 
+  write_api.write(bucket=bucket, org=org, record=points)
   endTime = datetime.datetime.now()
   print(f'ABS: Imported {line_count} rows in {endTime - startTime}')

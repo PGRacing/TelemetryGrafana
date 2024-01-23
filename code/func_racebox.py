@@ -34,13 +34,7 @@ def find_racebox(filepath):
 
 def open_file(filefullpath):
   with open(filefullpath, 'r') as file:
-    total_lines = sum(1 for line in file)
-    file.seek(0)
     csvreader_object = csv.reader(file)
-
-
-
-
     for i in range (1, 13):
         next(csvreader_object)
         
@@ -260,10 +254,7 @@ def open_file(filefullpath):
         write_api.write(bucket=bucket, org=org, record=points)
         points.clear()
 
-      if row_counter == total_lines - 13:
-        write_api.write(bucket=bucket, org=org, record=points)
-        points.clear()
-
+    write_api.write(bucket=bucket, org=org, record=points)
     endTime = datetime.now()
     print(f'Calculated file number {file_counter} in {endTime - startTime}')
 

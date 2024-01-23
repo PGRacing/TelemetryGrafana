@@ -100,6 +100,7 @@ def import_csv_gps(filepath):
       points.clear()
     line_count += 1
 
+  write_api.write(bucket=bucket, org=org, record=points)
   endTime = datetime.datetime.now()
   print(f'GPS: Imported {line_count} rows in {endTime - startTime}')
 

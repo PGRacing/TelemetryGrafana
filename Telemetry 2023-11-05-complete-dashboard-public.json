@@ -24,7 +24,10 @@
   "panels": [
     {
       "autoZoom": true,
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "defaultLayer": "OpenStreetMap",
       "gridPos": {
         "h": 23,
@@ -44,7 +47,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -53,7 +56,10 @@
       "type": "pr0ps-trackmap-panel"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -147,7 +153,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"6\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"angle\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"6\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"angle\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -156,10 +162,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -289,7 +292,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"angle\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"angle\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -298,7 +301,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -419,7 +425,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"acc\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"acc_x\" or r[\"_field\"] == \"acc_y\" or r[\"_field\"] == \"acc_z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"acc\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"acc_x\" or r[\"_field\"] == \"acc_y\" or r[\"_field\"] == \"acc_z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -427,7 +433,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -557,7 +566,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"velocity\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"velocity\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -566,7 +575,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -684,7 +696,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\" or r[\"_measurement\"] == \"abs\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\" or r[\"ID\"] == \"5\" or r[\"ID\"] == \"4\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\" or r[\"_measurement\"] == \"abs\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\" or r[\"ID\"] == \"5\" or r[\"ID\"] == \"4\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -692,7 +704,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -813,7 +828,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gyro\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"gyro_x\" or r[\"_field\"] == \"gyro_y\" or r[\"_field\"] == \"gyro_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gyro\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"gyro_x\" or r[\"_field\"] == \"gyro_y\" or r[\"_field\"] == \"gyro_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -821,7 +836,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -906,7 +924,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -914,10 +932,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1035,7 +1050,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angular_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ang_acc_x\" or r[\"_field\"] == \"ang_acc_y\" or r[\"_field\"] == \"ang_acc_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angular_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ang_acc_x\" or r[\"_field\"] == \"ang_acc_y\" or r[\"_field\"] == \"ang_acc_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -1043,10 +1058,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1164,7 +1176,7 @@
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vel_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"vel_x\" or r[\"_field\"] == \"vel_y\" or r[\"_field\"] == \"vel_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vel_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"vel_x\" or r[\"_field\"] == \"vel_y\" or r[\"_field\"] == \"vel_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -1172,10 +1184,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1293,7 +1302,7 @@
             "type": "influxdb",
             "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angles\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"pitch_angle\" or r[\"_field\"] == \"roll_angle\" or r[\"_field\"] == \"yaw_angle\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"telemetry-2023-11-05-Racebox\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angles\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"pitch_angle\" or r[\"_field\"] == \"roll_angle\" or r[\"_field\"] == \"yaw_angle\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -1301,7 +1310,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 38,
   "tags": [],
   "templating": {
@@ -1322,7 +1331,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Telemetry 2023-11-05",
-  "uid": "a107d483-07be-4545-aee3-ddf1a904dc14",
-  "version": 39,
+  "uid": "ae67093c-f889-42a7-81e8-ca8c0925045b",
+  "version": 61,
   "weekStart": ""
 }

@@ -76,5 +76,6 @@ def import_csv_imu(filepath, date):
       points.clear()
     line_count += 1
 
+  write_api.write(bucket=bucket, org=org, record=points)
   endTime = datetime.now()
   print(f'Imported {line_count} rows in {endTime - startTime}')
