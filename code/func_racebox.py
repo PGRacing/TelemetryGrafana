@@ -8,7 +8,7 @@ from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry_data/23_11_05_Pszczolki/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23_11_05_Pszczolki/'
 
 GForce =  9.80665 # m/s2
 timestep = 0.04 # s
@@ -51,6 +51,12 @@ def open_file(filefullpath):
   ang_vel_prev_x = 0.
   ang_vel_prev_y = 0.
   ang_vel_prev_z = 0.
+  #yaw_prev = 0.
+
+  acc_prev_x = 0.
+  acc_prev_y = 0.
+  acc_prev_z = 0.
+
 
 
   for row in data:
@@ -68,12 +74,16 @@ def open_file(filefullpath):
     f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, f_gps[0].x[1][0], f_gps[1].x[1][0], f_gps[2].x[1][0], row_counter)
     f_gyro = kalman_gyro(f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter)
     ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+    roll, pitch, yaw = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+    vel_acc_x, vel_acc_y, vel_acc_z =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z) 
 
-
-    #roll, pitch = calculate_angles(f_acc)
     ang_vel_prev_x = f_gyro[0].x[1][0]
     ang_vel_prev_y = f_gyro[1].x[1][0]
     ang_vel_prev_z = f_gyro[2].x[1][0]
+    #yaw_prev = yaw
+    acc_prev_x = f_acc[0].x[0][0]
+    acc_prev_y = f_acc[0].x[0][0]
+    acc_prev_z = f_acc[0].x[0][0]
 
     # latitude and longitude
     point = (
@@ -175,9 +185,63 @@ def open_file(filefullpath):
     )
     points.append(point)
 
+    # roll angle
+    point = (
+      Point('angles')
+      .tag('axis', 'x')
+      .field('roll_angle', roll)
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # pitch angle
+    point = (
+      Point('angles')
+      .tag('axis', 'y')
+      .field('pitch_angle', pitch)
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # yaw angle
+    point = (
+      Point('angles')
+      .tag('axis', 'z')
+      .field('yaw_angle', yaw)
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # velocity x
+    point = (
+      Point('vel_acc')
+      .tag('axis', 'x')
+      .field('vel_x', vel_acc_x)
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # velocity y
+    point = (
+      Point('vel_acc')
+      .tag('axis', 'y')
+      .field('vel_y', vel_acc_y)
+      .time(timestamp)
+    )
+    points.append(point)
+
+    # velocity z
+    point = (
+      Point('vel_acc')
+      .tag('axis', 'z')
+      .field('vel_z', vel_acc_z)
+      .time(timestamp)
+    )
+    points.append(point)
+
     row_counter += 1
 
-    if row_counter % 400 == 0:
+    if row_counter % 300 == 0:
       write_api.write(bucket=bucket, org=org, record=points)
       points.clear()
 
@@ -199,39 +263,24 @@ def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
   return ang_acc_x, ang_acc_y, ang_acc_z
 
 
-def calculate_angles(f_acc):
-  roll_angle = math.atan2(f_acc[1].x[0][0], f_acc[2].x[0][0])
-  pitch_angle = math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2) + (f_acc[2].x[0][0])**2)
-  #yaw_angle = yaw_previous + 
-  return roll_angle, pitch_angle
+def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev):
+  #roll_angle = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
+  #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
+  #yaw_angle = yaw_previous + (f_gyro[2].x[1][0] * timestep)
+  #return roll_angle, pitch_angle, yaw_angle
+  area_x = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * timestep
+  area_y = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * timestep
+  area_z = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * timestep
 
+  return area_x, area_y, area_z
 
+def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
+  area_x = (((f_acc[0].x[0][0] + acc_prev_x) / 2.) * timestep) * 0.01/(1/3600)
+  area_y = (((f_acc[1].x[0][0] + acc_prev_y) / 2.) * timestep) * 0.01/(1/3600)
+  area_z = (((f_acc[2].x[0][0] + acc_prev_z) / 2.) * timestep) * 0.01/(1/3600)
 
-def angular_values(roll_delta, pitch_delta):
-  # based on acc data
-  angular_acc_x = (roll_delta/timestep)**2
-  angular_acc_y = (pitch_delta/timestep)**2
-  #angular_acc_z = 
+  return area_x, area_y, area_z
 
-
-
-
-def import_acc(filefullpath):
-  file = open(filefullpath, 'r')
-  csvreader_object = csv.reader(file)
-  for i in range (1, 13):
-      next(csvreader_object)
-      
-  data = csv.DictReader(file)
-  row_counter = 0
-  points = []
-  startTime = datetime.now()
-  for row in data:
-    row['GForceX'] = float(row['GForceX']) * GForce 
-    row['GForceY'] = float(row['GForceY']) * GForce 
-    row['GForceZ'] = float(row['GForceZ']) * GForce
-    
-    acc_x, acc_y, acc_z = kalman_acc(float(row['GForceX']), row['GForceY'], row['GForceX'], )
 
 def kalman(filefullpath):
   file = open(filefullpath, 'r')
@@ -365,11 +414,6 @@ def kalman(filefullpath):
   
   endTime = datetime.now()
   print(f'GPS: import finished in {endTime - startTime}')
-
-  
-
-
-
 
 
 def linear_kalman(filefullpath):

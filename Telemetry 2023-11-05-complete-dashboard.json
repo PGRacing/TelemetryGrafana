@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 2,
-  "id": 2,
+  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -44,7 +44,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -82,7 +82,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": 1000,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -147,7 +147,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"6\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"6\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"angle\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -156,7 +156,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {},
+      "datasource": {
+        "type": "influxdb",
+        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -286,7 +289,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"angle\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -295,10 +298,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -327,7 +327,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": 1000,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -423,14 +423,11 @@
           "refId": "A"
         }
       ],
-      "title": "Accelerometer [m/s^2]",
+      "title": "Acceleration [m/s^2]",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -460,6 +457,145 @@
             },
             "showPoints": "auto",
             "spanNulls": 1000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "mm/s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "velocity 7"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Front Left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "velocity 8"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Front Right"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "velocity 11"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rear Left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "velocity 12"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rear Right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 10,
+        "x": 10,
+        "y": 23
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+          },
+          "query": "from(bucket: \"telemetry\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"ID\"] == \"7\" or r[\"ID\"] == \"8\" or r[\"ID\"] == \"11\" or r[\"ID\"] == \"12\")\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"damp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"velocity\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "refId": "A"
+        }
+      ],
+      "title": "Dampers - suspension travel speed [mm/s]",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {},
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -527,7 +663,7 @@
         "h": 10,
         "w": 10,
         "x": 10,
-        "y": 23
+        "y": 35
       },
       "id": 3,
       "options": {
@@ -556,10 +692,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
+      "datasource": {},
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -588,102 +721,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": 1000,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "velocitykmh"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 13,
-        "w": 10,
-        "x": 10,
-        "y": 33
-      },
-      "id": 7,
-      "options": {
-        "legend": {
-          "calcs": [
-            "min",
-            "max"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
-          },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\" or r[\"Record\"] == \"velocity_x\" or r[\"Record\"] == \"velocity_y\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\" or r[\"_field\"] == \"speed_x\" or r[\"_field\"] == \"speed_y\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
-          "refId": "A"
-        }
-      ],
-      "title": "Speed [km/h]",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": 1000,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -748,7 +786,7 @@
         ]
       },
       "gridPos": {
-        "h": 10,
+        "h": 14,
         "w": 10,
         "x": 0,
         "y": 36
@@ -780,6 +818,99 @@
         }
       ],
       "title": "Angular velocity [deg/s]",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {},
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 60000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "speed racebox",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "velocitykmh"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 10,
+        "x": 10,
+        "y": 45
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+          },
+          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "refId": "A"
+        }
+      ],
+      "title": "Speed [km/h]",
       "type": "timeseries"
     },
     {
@@ -838,7 +969,7 @@
               }
             ]
           },
-          "unit": "°/s^2"
+          "unit": "°/sec^2"
         },
         "overrides": [
           {
@@ -880,18 +1011,15 @@
         ]
       },
       "gridPos": {
-        "h": 10,
+        "h": 12,
         "w": 10,
         "x": 0,
-        "y": 46
+        "y": 50
       },
-      "id": 9,
+      "id": 8,
       "options": {
         "legend": {
-          "calcs": [
-            "min",
-            "max"
-          ],
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -907,11 +1035,269 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angular_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ang_acc_x\" or r[\"_field\"] == \"ang_acc_y\" or r[\"_field\"] == \"ang_acc_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angular_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ang_acc_x\" or r[\"_field\"] == \"ang_acc_y\" or r[\"_field\"] == \"ang_acc_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
-      "title": "Angular acceleration [deg/s^2]",
+      "title": "Angular acceleration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 1000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "velocitykmh"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "vel_x x"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "velocity x"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "vel_y y"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "velocity y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "vel_z z"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "velocity z"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 10,
+        "x": 10,
+        "y": 58
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+          },
+          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vel_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"vel_x\" or r[\"_field\"] == \"vel_y\" or r[\"_field\"] == \"vel_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "refId": "A"
+        }
+      ],
+      "title": "Velocity (integral after accelerometer)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 1000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "degree"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "roll_angle x"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "roll angle"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pitch_angle y"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pitch angle"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "yaw_angle z"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "yaw angle"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 10,
+        "x": 0,
+        "y": 62
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "bd26ca53-eea6-423d-81db-b47ca24b733c"
+          },
+          "query": "from(bucket: \"telemetry-rb\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angles\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"pitch_angle\" or r[\"_field\"] == \"roll_angle\" or r[\"_field\"] == \"yaw_angle\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "refId": "A"
+        }
+      ],
+      "title": "Rotation angles",
       "type": "timeseries"
     }
   ],
@@ -930,13 +1316,13 @@
     ]
   },
   "time": {
-    "from": "2023-11-05T08:02:36.609Z",
-    "to": "2023-11-05T08:37:22.833Z"
+    "from": "2023-11-05T08:06:37.782Z",
+    "to": "2023-11-05T08:10:08.910Z"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Telemetry 2023-11-05 2",
-  "uid": "ae67093c-f889-42a7-81e8-ca8c0925045b",
-  "version": 107,
+  "title": "Telemetry 2023-11-05",
+  "uid": "a107d483-07be-4545-aee3-ddf1a904dc14",
+  "version": 38,
   "weekStart": ""
 }

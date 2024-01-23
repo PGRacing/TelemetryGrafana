@@ -4,7 +4,7 @@ from code.func_gps import *
 
 # TODO IMPORTANT try-except/validate lines import better than aborting whole file import
 
-paths = ["C:/Users/malwi/Documents/MEGA/PG/PGRacingTeam/telemetry_data/23_11_05_Pszczolki/",
+paths = ['C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23_11_05_Pszczolki/',
         'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/',
         "C:/Users/cepek/Politechnika Gdańska/PGRacing Team - Dokumenty/PGRACING TEAM - PROJEKT/Resources/TESTING/05.11.2023 - Pszczółki/Raw data/05.11-Pszczolki/"
 ]
