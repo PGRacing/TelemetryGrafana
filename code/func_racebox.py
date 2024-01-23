@@ -25,230 +25,247 @@ conv_rate_lat = 111111.0
 
 def find_racebox(filepath):
   global file_counter
+  startProgram = datetime.now()
   for i in range (1, 16):
     file_counter += 1
-    #print(f'file {file_counter}')
     open_file(filepath + 'RB-' + str(i) + '.csv')
-    #kalman_one_value(filepath + 'RB-' + str(i) + '.csv')
-    #angular_acceleration(filepath + 'RB-' + str(i) + '.csv')
-  print(f'Successfully imported {file_counter} files!')
+  endProgram = datetime.now()
+  print(f'Successfully imported {file_counter} files in {endProgram - startProgram}!')
 
 def open_file(filefullpath):
-  file = open(filefullpath, 'r')
-  csvreader_object = csv.reader(file)
-  for i in range (1, 13):
-      next(csvreader_object)
-      
-  data = csv.DictReader(file)
-  points = []
-  startTime = datetime.now()
-  row_counter = 0
-
-  f_gps = list(range(3))
-  f_acc = list(range(3))
-  f_gyro = list(range(3))
-  
-  ang_vel_prev_x = 0.
-  ang_vel_prev_y = 0.
-  ang_vel_prev_z = 0.
-  #yaw_prev = 0.
-
-  acc_prev_x = 0.
-  acc_prev_y = 0.
-  acc_prev_z = 0.
+  with open(filefullpath, 'r') as file:
+    total_lines = sum(1 for line in file)
+    file.seek(0)
+    csvreader_object = csv.reader(file)
 
 
 
-  for row in data:
-    gyro_x = float(row['GyroX'])
-    gyro_y = float(row['GyroY'])
-    gyro_z = float(row['GyroZ'])
 
-    GForceX = float(row['GForceX']) * GForce 
-    GForceY = float(row['GForceY']) * GForce 
-    GForceZ = float(row['GForceZ']) * GForce
+    for i in range (1, 13):
+        next(csvreader_object)
+        
+    data = csv.DictReader(file)
+    points = []
+    startTime = datetime.now()
+    row_counter = 0
 
-    timestamp = row['Time']
+    f_gps = list(range(3))
+    f_acc = list(range(3))
+    f_gyro = list(range(3))
+    
+    ang_vel_prev_x = 0.
+    ang_vel_prev_y = 0.
+    ang_vel_prev_z = 0.
+    
+    roll = 0.
+    pitch = 0.
+    yaw = 0.
 
-    f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter)
-    f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, f_gps[0].x[1][0], f_gps[1].x[1][0], f_gps[2].x[1][0], row_counter)
-    f_gyro = kalman_gyro(f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter)
-    ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
-    roll, pitch, yaw = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
-    vel_acc_x, vel_acc_y, vel_acc_z =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z) 
+    vel_acc_x = 0.
+    vel_acc_y = 0.
+    vel_acc_z = 0.
 
-    ang_vel_prev_x = f_gyro[0].x[1][0]
-    ang_vel_prev_y = f_gyro[1].x[1][0]
-    ang_vel_prev_z = f_gyro[2].x[1][0]
-    #yaw_prev = yaw
-    acc_prev_x = f_acc[0].x[0][0]
-    acc_prev_y = f_acc[0].x[0][0]
-    acc_prev_z = f_acc[0].x[0][0]
 
-    # latitude and longitude
-    point = (
-      Point('gps')
-      .tag('ID', 'gps_position')
-      .field('latitude', float(f_gps[0].x[0][0]))
-      .field('longitude', float(f_gps[1].x[0][0]))
-      .time(timestamp)
-    )
-    points.append(point)
 
-    # speed
-    point = (
-        Point('spd')
-        .tag('Record', "velocity")
-        .field('speed', float(row['Speed']))
+
+    for row in data:
+      gyro_x = float(row['GyroX'])
+      gyro_y = float(row['GyroY'])
+      gyro_z = float(row['GyroZ'])
+
+      GForceX = float(row['GForceX']) * GForce 
+      GForceY = float(row['GForceY']) * GForce 
+      GForceZ = float(row['GForceZ']) * GForce
+
+      timestamp = row['Time']
+
+      f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter)
+      f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, f_gps[0].x[1][0], f_gps[1].x[1][0], f_gps[2].x[1][0], row_counter)
+      f_gyro = kalman_gyro(f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter)
+      ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+
+      rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+      roll += rotation_angles[0]
+      pitch += rotation_angles[1]
+      yaw += rotation_angles[2]
+
+      #velocities =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z)
+      vel_acc_x += (f_acc[0].x[1][0]) * (0.001/(1/3600))
+      vel_acc_y += (f_acc[1].x[1][0]) * (0.001/(1/3600))
+      vel_acc_z += (f_acc[2].x[1][0]) * (0.001/(1/3600))
+
+      ang_vel_prev_x = f_gyro[0].x[1][0]
+      ang_vel_prev_y = f_gyro[1].x[1][0]
+      ang_vel_prev_z = f_gyro[2].x[1][0]
+
+
+
+      # latitude and longitude
+      point = (
+        Point('gps')
+        .tag('ID', 'gps_position')
+        .field('latitude', float(f_gps[0].x[0][0]))
+        .field('longitude', float(f_gps[1].x[0][0]))
         .time(timestamp)
-        )
-    points.append(point)
-    
-    # acc_x
-    point = (
-      Point('acc')
-      .tag("axis", "x")
-      .field("acc_x", float(f_acc[0].x[0][0]))
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # acc_y
-    point = (
-      Point('acc')
-      .tag("axis", "y")
-      .field("acc_y", float(f_acc[1].x[0][0]))
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # acc_z
-    point = (
-      Point('acc')
-      .tag("axis", "z")
-      .field("acc_z", float(f_acc[2].x[0][0]))
-      .time(timestamp)
-    )
-    points.append(point)
+      )
+      points.append(point)
 
-      # gyro_x
-    point = (
-      Point('gyro')
-      .tag("axis", "x")
-      .field("gyro_x", float(f_gyro[0].x[1][0]))
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # gyro_y
-    point = (
-      Point('gyro')
-      .tag("axis", "y")
-      .field("gyro_y", float(f_gyro[1].x[1][0]))
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # gyro_z
-    point = (
-      Point('gyro')
-      .tag("axis", "z")
-      .field("gyro_z", float(f_gyro[2].x[1][0]))
-      .time(timestamp)
-    )
-    points.append(point)
+      # speed
+      point = (
+          Point('spd')
+          .tag('Record', "velocity")
+          .field('speed', float(row['Speed']))
+          .time(timestamp)
+          )
+      points.append(point)
+      
+      # acc_x
+      point = (
+        Point('acc')
+        .tag("axis", "x")
+        .field("acc_x", float(f_acc[0].x[0][0]))
+        .time(timestamp)
+      )
+      points.append(point)
+      
+      # acc_y
+      point = (
+        Point('acc')
+        .tag("axis", "y")
+        .field("acc_y", float(f_acc[1].x[0][0]))
+        .time(timestamp)
+      )
+      points.append(point)
+      
+      # acc_z
+      point = (
+        Point('acc')
+        .tag("axis", "z")
+        .field("acc_z", float(f_acc[2].x[0][0]))
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # ang acc x
-    point = (
-      Point('angular_acc')
-      .tag("axis", "x")
-      .field("ang_acc_x", ang_acc_x)
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # ang acc x
-    point = (
-      Point('angular_acc')
-      .tag("axis", "y")
-      .field("ang_acc_y", ang_acc_y)
-      .time(timestamp)
-    )
-    points.append(point)
-    
-    # ang acc x
-    point = (
-      Point('angular_acc')
-      .tag("axis", "z")
-      .field("ang_acc_z", ang_acc_z)
-      .time(timestamp)
-    )
-    points.append(point)
+        # gyro_x
+      point = (
+        Point('gyro')
+        .tag("axis", "x")
+        .field("gyro_x", float(f_gyro[0].x[1][0]))
+        .time(timestamp)
+      )
+      points.append(point)
+      
+      # gyro_y
+      point = (
+        Point('gyro')
+        .tag("axis", "y")
+        .field("gyro_y", float(f_gyro[1].x[1][0]))
+        .time(timestamp)
+      )
+      points.append(point)
+      
+      # gyro_z
+      point = (
+        Point('gyro')
+        .tag("axis", "z")
+        .field("gyro_z", float(f_gyro[2].x[1][0]))
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # roll angle
-    point = (
-      Point('angles')
-      .tag('axis', 'x')
-      .field('roll_angle', roll)
-      .time(timestamp)
-    )
-    points.append(point)
+      # ang acc x
+      point = (
+        Point('angular_acc')
+        .tag("axis", "x")
+        .field("ang_acc_x", ang_acc_x)
+        .time(timestamp)
+      )
+      points.append(point)
+      
+      # ang acc x
+      point = (
+        Point('angular_acc')
+        .tag("axis", "y")
+        .field("ang_acc_y", ang_acc_y)
+        .time(timestamp)
+      )
+      points.append(point)
+      
+      # ang acc x
+      point = (
+        Point('angular_acc')
+        .tag("axis", "z")
+        .field("ang_acc_z", ang_acc_z)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # pitch angle
-    point = (
-      Point('angles')
-      .tag('axis', 'y')
-      .field('pitch_angle', pitch)
-      .time(timestamp)
-    )
-    points.append(point)
+      # roll angle
+      point = (
+        Point('angles')
+        .tag('axis', 'x')
+        .field('roll_angle', roll)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # yaw angle
-    point = (
-      Point('angles')
-      .tag('axis', 'z')
-      .field('yaw_angle', yaw)
-      .time(timestamp)
-    )
-    points.append(point)
+      # pitch angle
+      point = (
+        Point('angles')
+        .tag('axis', 'y')
+        .field('pitch_angle', pitch)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # velocity x
-    point = (
-      Point('vel_acc')
-      .tag('axis', 'x')
-      .field('vel_x', vel_acc_x)
-      .time(timestamp)
-    )
-    points.append(point)
+      # yaw angle
+      point = (
+        Point('angles')
+        .tag('axis', 'z')
+        .field('yaw_angle', yaw)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # velocity y
-    point = (
-      Point('vel_acc')
-      .tag('axis', 'y')
-      .field('vel_y', vel_acc_y)
-      .time(timestamp)
-    )
-    points.append(point)
+      # velocity x
+      point = (
+        Point('vel_acc')
+        .tag('axis', 'x')
+        .field('vel_x', vel_acc_x)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    # velocity z
-    point = (
-      Point('vel_acc')
-      .tag('axis', 'z')
-      .field('vel_z', vel_acc_z)
-      .time(timestamp)
-    )
-    points.append(point)
+      # velocity y
+      point = (
+        Point('vel_acc')
+        .tag('axis', 'y')
+        .field('vel_y', vel_acc_y)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    row_counter += 1
+      # velocity z
+      point = (
+        Point('vel_acc')
+        .tag('axis', 'z')
+        .field('vel_z', vel_acc_z)
+        .time(timestamp)
+      )
+      points.append(point)
 
-    if row_counter % 300 == 0:
-      write_api.write(bucket=bucket, org=org, record=points)
-      points.clear()
+      row_counter += 1
 
-  
+      if row_counter % 300 == 0:
+        write_api.write(bucket=bucket, org=org, record=points)
+        points.clear()
 
-  endTime = datetime.now()
-  print(f'Calculated file number {file_counter} in {endTime - startTime}')
+      if row_counter == total_lines - 13:
+        write_api.write(bucket=bucket, org=org, record=points)
+        points.clear()
+
+    endTime = datetime.now()
+    print(f'Calculated file number {file_counter} in {endTime - startTime}')
 
 
 def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
@@ -268,11 +285,11 @@ def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev):
   #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
   #yaw_angle = yaw_previous + (f_gyro[2].x[1][0] * timestep)
   #return roll_angle, pitch_angle, yaw_angle
-  area_x = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * timestep
-  area_y = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * timestep
-  area_z = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * timestep
+  roll = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * timestep
+  pitch = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * timestep
+  yaw = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * timestep
 
-  return area_x, area_y, area_z
+  return roll, pitch, yaw
 
 def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
   area_x = (((f_acc[0].x[0][0] + acc_prev_x) / 2.) * timestep) * 0.01/(1/3600)
