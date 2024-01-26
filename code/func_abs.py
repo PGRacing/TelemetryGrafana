@@ -1,8 +1,8 @@
 import csv
 from datetime import datetime
-from code.conf_influxdb import *
-from code.utils_timestamp import *
-from code.test_functions.filters import low_pass_filter, get_alpha
+from conf_influxdb import *
+from utils_timestamp import *
+from test_functions.filters import low_pass_filter, get_alpha
 
 low_pass_filter_alpha_4Hz = get_alpha(0.004, 4)
 

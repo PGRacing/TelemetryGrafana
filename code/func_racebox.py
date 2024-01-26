@@ -59,6 +59,8 @@ def open_file(filefullpath):
     vel_acc_y = 0.
     vel_acc_z = 0.
 
+    lat_prev = 0.
+    lon_prev = 0.
 
 
 
@@ -75,7 +77,7 @@ def open_file(filefullpath):
 
       f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter)
       f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, f_gps[0].x[1][0], f_gps[1].x[1][0], f_gps[2].x[1][0], row_counter)
-      f_gyro = kalman_gyro(f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter)
+      f_gyro = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev)
       ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
 
       rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
@@ -83,14 +85,20 @@ def open_file(filefullpath):
       pitch += rotation_angles[1]
       yaw += rotation_angles[2]
 
+      if (yaw < (-180)) or (yaw > 180):
+        yaw = wrap_angle(yaw)
+      
       #velocities =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z)
-      vel_acc_x += (f_acc[0].x[1][0]) * (0.001/(1/3600))
-      vel_acc_y += (f_acc[1].x[1][0]) * (0.001/(1/3600))
-      vel_acc_z += (f_acc[2].x[1][0]) * (0.001/(1/3600))
+      vel_acc_x += ((f_acc[0].x[1][0]) * 3.6)
+      vel_acc_y += ((f_acc[1].x[1][0]) * 3.6)
+      vel_acc_z += ((f_acc[2].x[1][0]) * 3.6)
 
       ang_vel_prev_x = f_gyro[0].x[1][0]
       ang_vel_prev_y = f_gyro[1].x[1][0]
       ang_vel_prev_z = f_gyro[2].x[1][0]
+
+      lat_prev = f_gps[1].x[0][0]
+      lon_prev = f_gps[0].x[0][0]
 
 
 
@@ -216,7 +224,7 @@ def open_file(filefullpath):
       point = (
         Point('angles')
         .tag('axis', 'z')
-        .field('yaw_angle', yaw)
+        .field('yaw_angle', float(yaw))
         .time(timestamp)
       )
       points.append(point)
@@ -288,6 +296,9 @@ def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
   area_z = (((f_acc[2].x[0][0] + acc_prev_z) / 2.) * timestep) * 0.01/(1/3600)
 
   return area_x, area_y, area_z
+
+def wrap_angle(angle):
+   return (angle + 180) % 360 - 180
 
 
 def kalman(filefullpath):
