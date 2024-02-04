@@ -4,7 +4,6 @@ from datetime import datetime
 from functools import reduce
 from conf_influxdb import *
 from utils_timestamp import *
-from kalman_filters import *
 
 def byte_xor_row(row):
   row_list = list(row.values())
