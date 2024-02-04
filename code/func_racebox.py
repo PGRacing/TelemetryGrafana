@@ -27,20 +27,20 @@ conv_rate_lat = 111111.0
 
 
 def find_racebox(filepath):
-  global file_counter
-  global var_gyro
-  global var_acc
-  global var_gps
+    global file_counter
+    global var_gyro
+    global var_acc
+    global var_gps
 
-  startProgram = datetime.now()
-  for i in range (1, 16):
-    file_counter += 1
-    var_gyro = calc_var_gyro(filepath + 'RB-' + str(i) + '.csv')
-    var_acc = calc_var_acc(filepath + 'RB-' + str(i) + '.csv')
-    var_gps = calc_var_gps(filepath + 'RB-' + str(i) + '.csv')
-    open_file(filepath + 'RB-' + str(i) + '.csv')
-  endProgram = datetime.now()
-  print(f'Successfully imported {file_counter} files in {endProgram - startProgram}!')
+    startProgram = datetime.now()
+    for i in range (1, 16):
+        file_counter += 1
+        var_gyro = calc_var_gyro(filepath + 'RB-' + str(i) + '.csv')
+        var_acc = calc_var_acc(filepath + 'RB-' + str(i) + '.csv')
+        var_gps = calc_var_gps(filepath + 'RB-' + str(i) + '.csv')
+        open_file(filepath + 'RB-' + str(i) + '.csv')
+    endProgram = datetime.now()
+    print(f'Successfully imported {file_counter} files in {endProgram - startProgram}!')
 
 def open_file(filefullpath):
     with open(filefullpath, 'r') as file:
@@ -65,18 +65,16 @@ def open_file(filefullpath):
         pitch = 0.
         yaw = 0.
 
-    vel_x = 0.
-    vel_y = 0.
-    vel_z = 0.
+        vel_x = 0.
+        vel_y = 0.
+        vel_z = 0.
 
-    lat_prev = 0.
-    lon_prev = 0.
+        lat_prev = 0.
+        lon_prev = 0.
 
-    acc_prev_x = 0.
-    acc_prev_y = 0.
-    acc_prev_z = 0.
-
-
+        acc_prev_x = 0.
+        acc_prev_y = 0.
+        acc_prev_z = 0.
 
         for row in data:
             gyro_x = float(row['GyroX'])
@@ -92,47 +90,45 @@ def open_file(filefullpath):
       #vel_x = f_gps[0].x[1][0] * conv_rate_lon
       #vel_y = f_gps[1].x[1][0] * conv_rate_lat
 
-      f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter, var_gps)
-      f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), f_gps[2].x[1][0], row_counter, var_acc, var_gps)
-      f_gyro, fi, theta, psi = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, var_gyro)
-      ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+            f_gps = kalman_gps(f_gps, row['Latitude'], row['Longitude'], row['Altitude'], row_counter, var_gps)
+            f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), f_gps[2].x[1][0], row_counter, var_acc, var_gps)
+            f_gyro, fi, theta, psi = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, var_gyro)
+            ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
 
-      rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z, f_acc)
-      roll += rotation_angles[0]
-      pitch += rotation_angles[1]
-      yaw += rotation_angles[2]
+            rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z, f_acc)
+            roll += rotation_angles[0]
+            pitch += rotation_angles[1]
+            yaw += rotation_angles[2]
 
-      #roll = f_gyro[0].x[0][0]
-      #pitch = f_gyro[1].x[0][0]
-      #yaw = f_gyro[2].x[0][0]
+            #roll = f_gyro[0].x[0][0]
+            #pitch = f_gyro[1].x[0][0]
+            #yaw = f_gyro[2].x[0][0]
 
 
-      #if (yaw < (-360)) or (yaw > 360):
-        #print(yaw)
-        
-      yaw = wrap_angle(yaw)
+            #if (yaw < (-360)) or (yaw > 360):
+                #print(yaw)
+                
+            yaw = wrap_angle(yaw)
       
-      #velocities =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z)
-      #vel_x += velocities[0]
-      #vel_y += velocities[1]
-      #vel_z += velocities[2]
+            #velocities =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z)
+            #vel_x += velocities[0]
+            #vel_y += velocities[1]
+            #vel_z += velocities[2]
 
-      vel_x += ((f_acc[0].x[1][0]) * 3.6)
-      vel_y += ((f_acc[1].x[1][0]) * 3.6)
-      vel_z += ((f_acc[2].x[1][0]) * 3.6)
+            vel_x += ((f_acc[0].x[1][0]) * 3.6)
+            vel_y += ((f_acc[1].x[1][0]) * 3.6)
+            vel_z += ((f_acc[2].x[1][0]) * 3.6)
 
             ang_vel_prev_x = f_gyro[0].x[1][0]
             ang_vel_prev_y = f_gyro[1].x[1][0]
             ang_vel_prev_z = f_gyro[2].x[1][0]
 
-      lat_prev = f_gps[0].x[0][0]
-      lon_prev = f_gps[1].x[0][0]
+            lat_prev = f_gps[0].x[0][0]
+            lon_prev = f_gps[1].x[0][0]
 
-      #acc_prev_x = f_acc[0].x[0][0]
-      #acc_prev_y = f_acc[1].x[0][0]
-      #acc_prev_z = f_acc[1].x[0][0]
-
-
+            #acc_prev_x = f_acc[0].x[0][0]
+            #acc_prev_y = f_acc[1].x[0][0]
+            #acc_prev_z = f_acc[1].x[0][0]
 
             # latitude and longitude
             point = (
@@ -252,41 +248,41 @@ def open_file(filefullpath):
             )
             points.append(point)
 
-      # yaw angle
-      point = (
-        Point('angles')
-        .tag('axis', 'z')
-        .field('yaw_angle', float(yaw))
-        .time(timestamp)
-      )
-      points.append(point)
+            # yaw angle
+            point = (
+                Point('angles')
+                .tag('axis', 'z')
+                .field('yaw_angle', float(yaw))
+                .time(timestamp)
+            )
+            points.append(point)
 
-      # velocity x
-      point = (
-        Point('vel_acc')
-        .tag('axis', 'x')
-        .field('vel_x', vel_x)
-        .time(timestamp)
-      )
-      points.append(point)
+            # velocity x
+            point = (
+                Point('vel_acc')
+                .tag('axis', 'x')
+                .field('vel_x', vel_x)
+                .time(timestamp)
+            )
+            points.append(point)
 
-      # velocity y
-      point = (
-        Point('vel_acc')
-        .tag('axis', 'y')
-        .field('vel_y', vel_y)
-        .time(timestamp)
-      )
-      points.append(point)
+            # velocity y
+            point = (
+                Point('vel_acc')
+                .tag('axis', 'y')
+                .field('vel_y', vel_y)
+                .time(timestamp)
+            )
+            points.append(point)
 
-      # velocity z
-      point = (
-        Point('vel_acc')
-        .tag('axis', 'z')
-        .field('vel_z', vel_z)
-        .time(timestamp)
-      )
-      points.append(point)
+            # velocity z
+            point = (
+                Point('vel_acc')
+                .tag('axis', 'z')
+                .field('vel_z', vel_z)
+                .time(timestamp)
+            )
+            points.append(point)
 
             row_counter += 1
 
@@ -299,36 +295,6 @@ def open_file(filefullpath):
         print(f'Calculated file number {file_counter} in {endTime - startTime}')
 
 
-def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
-  delta_x = float(f_gyro[0].x[1][0]) - prev_x
-  delta_y = float(f_gyro[1].x[1][0]) - prev_y
-  delta_z = float(f_gyro[2].x[1][0]) - prev_z
-
-  ang_acc_x = delta_x/timestep
-  ang_acc_y = delta_y/timestep
-  ang_acc_z = delta_z/timestep
-
-  return ang_acc_x, ang_acc_y, ang_acc_z
-
-
-def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev, f_acc):
-  #roll_angle = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-  #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-  #yaw_angle = f_gyro[2].x[1][0] * timestep
-  
-  #return roll_angle, pitch_angle, yaw_angle
-  roll = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * timestep
-  pitch = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * timestep
-  yaw = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * timestep
-
-  return roll, pitch, yaw
-
-def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
-  area_x = (((f_acc[0].x[0][0] + acc_prev_x) / 2.) * timestep) * 3.6
-  area_y = (((f_acc[1].x[0][0] + acc_prev_y) / 2.) * timestep) * 3.6
-  area_z = (((f_acc[2].x[0][0] + acc_prev_z) / 2.) * timestep) * 3.6
-
-  return area_x, area_y, area_z
 
 def wrap_angle(angle):
   #return (angle + 180) % 360 - 180
