@@ -2,8 +2,9 @@ import csv
 import operator
 from datetime import datetime
 from functools import reduce
-from code.conf_influxdb import *
-from code.utils_timestamp import *
+from conf_influxdb import *
+from utils_timestamp import *
+from kalman_filters import *
 
 def byte_xor_row(row):
   row_list = list(row.values())
@@ -27,84 +28,89 @@ def nmea_checksum(sentence: str):
     except ValueError as e:
        return False
 
-def import_csv_gps(filepath):
-  # CSV column names as following:
-  # timestamp,LOG,utc,pos status,lat,lat dir,lon,lon dir,speed,track,date,mag var,var dir,mode ind,chs,ter
-  # date like '2023-11-04'
-  file = open(filepath, "r")
-  csv_reader = csv.DictReader(file)
-  line_count = 0
-  start_time = 0
-  points = []
-  new_row = ''
-  startTime = datetime.datetime.now()
-  previous_timestamp = None
-  previous_csv_timestamp = None
+def import_csv_gps(filepath, f_gps):
+    # CSV column names as following:
+    # timestamp,LOG,utc,pos status,lat,lat dir,lon,lon dir,speed,track,date,mag var,var dir,mode ind,chs,ter
+    # date like '2023-11-04'
+    file = open(filepath, "r")
+    csv_reader = csv.DictReader(file)
+    line_count = 0
+    start_time = 0
+    points = []
+    new_row = ''
+    startTime = datetime.now()
+    previous_timestamp = None
+    previous_csv_timestamp = None
 
-  for row in csv_reader:
+    for row in csv_reader:
     
-    if row["timestamp"] and row["date"]:
-      #start_timestamp = str(correct_gp_start_time(row['timestamp']))
-      start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
-      break
+        if row["timestamp"] and row["date"]:
+            #start_timestamp = str(correct_gp_start_time(row['timestamp']))
+            start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
+            break
 
-  if start_time == 0:
-    return 0
+    if start_time == 0:
+        return 0, f_gps
   #print(start_time)
 
-  for row in csv_reader:
-    #print(f'{row["timestamp"]}; {row["LOG"]}; {row["utc"]}; {row["pos status"]}; {row["lat"]}; {row["lat dir"]}; {row["lon"]}; {row["lon dir"]}; {row["speed"]}; {row["track"]}; {row["date"]}; {row["mode ind"]}')
-    if row["lat"] and row["lat dir"] and row["lon"] and row["lon dir"]:
-        new_row = f'{row["LOG"]},{row["utc"]},{row["pos status"]},{row["lat"]},{row["lat dir"]},{row["lon"]},{row["lon dir"]},{row["speed"]},{row["track"]},{row["date"]},{row["mag var"]},{row["var dir"]},{row["mode ind"]},{row["chs"]}\n'
-        if not nmea_checksum(new_row):
-          continue
-    else:
-       #print(f'{row["lat"]}, {row["lat dir"]}, {row["lon"]}, {row["lon dir"]},')
-       continue
+    for row in csv_reader:
+        #print(f'{row["timestamp"]}; {row["LOG"]}; {row["utc"]}; {row["pos status"]}; {row["lat"]}; {row["lat dir"]}; {row["lon"]}; {row["lon dir"]}; {row["speed"]}; {row["track"]}; {row["date"]}; {row["mode ind"]}')
+        if row["lat"] and row["lat dir"] and row["lon"] and row["lon dir"]:
+            new_row = f'{row["LOG"]},{row["utc"]},{row["pos status"]},{row["lat"]},{row["lat dir"]},{row["lon"]},{row["lon dir"]},{row["speed"]},{row["track"]},{row["date"]},{row["mag var"]},{row["var dir"]},{row["mode ind"]},{row["chs"]}\n'
+            if not nmea_checksum(new_row):
+                continue
+        else:
+            #print(f'{row["lat"]}, {row["lat dir"]}, {row["lon"]}, {row["lon dir"]},')
+            continue
     
-    org_timestamp = row["timestamp"]
-    if line_count < 1:
-        init_time = csv_timestamp_to_timedelta(row["timestamp"])
-        first_timestamp = correct_init_time(init_time)
-        timestamp = start_time + first_timestamp
-    else:
-        timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp)
-    previous_timestamp = timestamp
-    previous_csv_timestamp = org_timestamp
-    # transformation x1 = int(x/100) + ((x%100)/60)
-    lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
-    lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)
-    point = (
-      Point('gps')
-      .tag("ID", "gps_position")
-      .field("latitude", lat)
-      .time(timestamp)
-    )
-    points.append(point)
-    point = (
-      Point('gps')
-      .tag("ID", "gps_position")
-      .field("longitude", lon)
-      .time(timestamp)
-    )
-    points.append(point)
-    point = (
-      Point('gps')
-      .tag("ID", "gps_position")
-      .field("speed", float(row["speed"]) * 1.852)
-      .time(timestamp)
-    )
-    points.append(point)
-    if line_count % 1666 == 0:
-      write_api.write(bucket=bucket, org=org, record=points)
-      points.clear()
-    line_count += 1
+        org_timestamp = row["timestamp"]
+        if line_count < 1:
+            init_time = csv_timestamp_to_timedelta(row["timestamp"])
+            first_timestamp = correct_init_time(init_time)
+            timestamp = start_time + first_timestamp
+        else:
+            timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp)
+        previous_timestamp = timestamp
+        previous_csv_timestamp = org_timestamp
+        # transformation x1 = int(x/100) + ((x%100)/60)
+        lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
+        lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)
 
-  write_api.write(bucket=bucket, org=org, record=points)
-  endTime = datetime.datetime.now()
-  print(f'GPS: Imported {line_count} rows in {endTime - startTime}')
+        f_gps = kalman_gps(f_gps, lat, lon, line_count)
 
-  return start_time
+        point = (
+            Point('gps')
+            .tag("ID", "gps_position")
+            .field("latitude", f_gps[0].x[0][0])
+            .time(timestamp)
+        )
+        points.append(point)
+        point = (
+            Point('gps')
+            .tag("ID", "gps_position")
+            .field("longitude", f_gps[1].x[0][0])
+            .time(timestamp)
+        )
+        points.append(point)
+        point = (
+            Point('gps')
+            .tag("ID", "gps_position")
+            .field("speed", float(row["speed"]) * 1.852)
+            .time(timestamp)
+        )
+        points.append(point)
+        if line_count % 1666 == 0:
+            write_api.write(bucket=bucket, org=org, record=points)
+            points.clear()
+        line_count += 1
+
+    write_api.write(bucket=bucket, org=org, record=points)
+    endTime = datetime.now()
+    print(f'GPS: Imported {line_count} rows in {endTime - startTime}')
+
+    file.close()
+
+    return start_time, f_gps
 
 def convert_csv_gps(filepath):
   # convert csv data to csv in standard for eg. gpsvisualizer.com

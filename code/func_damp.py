@@ -1,8 +1,8 @@
 import csv
 from datetime import datetime
-from code.conf_influxdb import *
-from code.utils_timestamp import *
-from code.damp_ang_to_pos import *
+from conf_influxdb import *
+from utils_timestamp import *
+from damp_ang_to_pos import *
 
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
