@@ -11,7 +11,7 @@ TIMESTEP = 0.04 # s
 #TIMESTEP = 0.004
 
 def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number, var_acc, var_gps):
-    var = 0.0001
+    var = 0.01
     if row_number == 0:
         for i in range(3):
             f[i] = KalmanFilter(dim_x=2, dim_z=1)
@@ -44,7 +44,7 @@ def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number, var_a
     return f
 
 def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev, var_gyro):
-    var = 0.0001
+    var = 0.01
     fi = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt(f_acc[1].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     theta = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt(f_acc[0].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     if row_number == 0:
@@ -72,10 +72,12 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
             
             f_gyro[i].F = np.array([[1., TIMESTEP], 
                                 [0., 1.]])  # state transition matrix
-            f_gyro[i].H = np.array([[1., 0.]])  # Measurement function
-            f_gyro[i].P = np.array([[10., 0.], 
-                                [0., 10.]])  # covariance matrix
-            f_gyro[i].R = np.array([[var_gyro]])  # measurement noise
+            f_gyro[i].H = np.array([[1., 0.],
+                                    [0., 1.]])  # Measurement function
+            f_gyro[i].P = np.array([[4., 0.], 
+                                    [0., 0.]])  # covariance matrix
+            f_gyro[i].R = np.array([[var, 0.],
+                                    [0., var_gyro]])  # measurement noise
             f_gyro[i].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var)  # process noise
 
 
@@ -107,13 +109,13 @@ def kalman_gps(f, lat, lon, row_number, var_gps):
             f[i].H = np.array([[1., 0.]])  # Measurement function
             f[i].P = np.array([[10., 0.], 
                                 [0., 10.]])  # covariance matrix
-            f[i].R = np.array([[var_gps]])  # measurement noise
+            f[i].R = np.array([[var]])  # measurement noise
             f[i].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var)  # process noise
 
     if lat == '':
         lat = 0.0
         signal_loss = True
-    elif lon != '':
+    elif lon == '':
         lon = 0.0
         signal_loss = True
     

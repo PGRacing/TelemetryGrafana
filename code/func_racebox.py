@@ -21,6 +21,8 @@ var_acc = 0.
 # to be set every track change
 approx_lon = 18.712
 approx_lat = 54.178
+lat_prev = 54.1784441
+lon_prev = 18.7133100
 
 conv_rate_lon = math.cos(approx_lat) * (40075000/360) # deg to met
 conv_rate_lat = 111111.0
@@ -33,7 +35,7 @@ def find_racebox(filepath):
     global var_gps
 
     startProgram = datetime.now()
-    for i in range (1, 5):
+    for i in range (1, 16):
         file_counter += 1
         var_gyro = calc_var_gyro(filepath + 'RB-' + str(i) + '.csv', 'racebox')
         var_acc = calc_var_acc(filepath + 'RB-' + str(i) + '.csv', 'racebox')
@@ -43,6 +45,8 @@ def find_racebox(filepath):
     print(f'Successfully imported {file_counter} files in {endProgram - startProgram}!')
 
 def open_file(filefullpath):
+    global lon_prev
+    global lat_prev
     with open(filefullpath, 'r') as file:
         csvreader_object = csv.reader(file)
         for i in range (1, 13):
@@ -52,6 +56,7 @@ def open_file(filefullpath):
         points = []
         startTime = datetime.now()
         row_counter = 0
+           
 
         f_gps = list(range(3))
         f_acc = list(range(3))
@@ -69,12 +74,9 @@ def open_file(filefullpath):
         vel_y = 0.
         vel_z = 0.
 
-        lat_prev = 0.
-        lon_prev = 0.
-
-        acc_prev_x = 0.
-        acc_prev_y = 0.
-        acc_prev_z = 0.
+        #acc_prev_x = 0.189
+        #acc_prev_y = 0.037
+        #acc_prev_z = 0.990
 
         for row in data:
             gyro_x = float(row['GyroX'])
@@ -93,12 +95,69 @@ def open_file(filefullpath):
             f_gps = kalman_gps(f_gps, float(row['Latitude']), float(row['Longitude']), row_counter, var_gps)
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter, var_acc, var_gps)
             f_gyro = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, var_gyro)
-            ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+            
+            if row_counter > 0:
+                ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+                rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+                roll += rotation_angles[0]
+                pitch += rotation_angles[1]
+                yaw += rotation_angles[2]
 
-            rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z, f_acc)
-            roll += rotation_angles[0]
-            pitch += rotation_angles[1]
-            yaw += rotation_angles[2]
+                yaw = wrap_angle(yaw)
+
+                # ang acc x
+                point = (
+                    Point('angular_acc')
+                    .tag("axis", "x")
+                    .field("ang_acc_x", ang_acc_x)
+                    .time(timestamp)
+                )
+                points.append(point)
+                
+                # ang acc x
+                point = (
+                    Point('angular_acc')
+                    .tag("axis", "y")
+                    .field("ang_acc_y", ang_acc_y)
+                    .time(timestamp)
+                )
+                points.append(point)
+                
+                # ang acc x
+                point = (
+                    Point('angular_acc')
+                    .tag("axis", "z")
+                    .field("ang_acc_z", ang_acc_z)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                # roll angle
+                point = (
+                    Point('angles')
+                    .tag('axis', 'x')
+                    .field('roll_angle', roll)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                # pitch angle
+                point = (
+                    Point('angles')
+                    .tag('axis', 'y')
+                    .field('pitch_angle', pitch)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                # yaw angle
+                point = (
+                    Point('angles')
+                    .tag('axis', 'z')
+                    .field('yaw_angle', float(yaw))
+                    .time(timestamp)
+                )
+                points.append(point)
 
             #roll = f_gyro[0].x[0][0]
             #pitch = f_gyro[1].x[0][0]
@@ -108,7 +167,7 @@ def open_file(filefullpath):
             #if (yaw < (-360)) or (yaw > 360):
                 #print(yaw)
                 
-            yaw = wrap_angle(yaw)
+            
       
             #velocities =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z)
             #vel_x += velocities[0]
@@ -203,59 +262,7 @@ def open_file(filefullpath):
             )
             points.append(point)
 
-            # ang acc x
-            point = (
-                Point('angular_acc')
-                .tag("axis", "x")
-                .field("ang_acc_x", ang_acc_x)
-                .time(timestamp)
-            )
-            points.append(point)
             
-            # ang acc x
-            point = (
-                Point('angular_acc')
-                .tag("axis", "y")
-                .field("ang_acc_y", ang_acc_y)
-                .time(timestamp)
-            )
-            points.append(point)
-            
-            # ang acc x
-            point = (
-                Point('angular_acc')
-                .tag("axis", "z")
-                .field("ang_acc_z", ang_acc_z)
-                .time(timestamp)
-            )
-            points.append(point)
-
-            # roll angle
-            point = (
-                Point('angles')
-                .tag('axis', 'x')
-                .field('roll_angle', roll)
-                .time(timestamp)
-            )
-            points.append(point)
-
-            # pitch angle
-            point = (
-                Point('angles')
-                .tag('axis', 'y')
-                .field('pitch_angle', pitch)
-                .time(timestamp)
-            )
-            points.append(point)
-
-            # yaw angle
-            point = (
-                Point('angles')
-                .tag('axis', 'z')
-                .field('yaw_angle', float(yaw))
-                .time(timestamp)
-            )
-            points.append(point)
 
             # velocity x
             point = (
@@ -297,12 +304,12 @@ def open_file(filefullpath):
 
 
 def wrap_angle(angle):
-  #return (angle + 180) % 360 - 180
-  while angle > 360:
-    angle -= 360
-  while angle < 0:
-    angle+=360
-  return angle
+    #return (angle + 180) % 360 - 180
+    while angle > 360:
+        angle -= 360
+    while angle < 0:
+        angle+=360
+    return angle
    
    
 
