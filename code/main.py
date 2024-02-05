@@ -58,10 +58,10 @@ def import_file(filepath, file_num):
         if start_time == 0:
             print('Start time not set! Skip this iteration.')
             return
-        #import_csv_abs(filepath + 'ABS0101-' + str(file_num) + '.csv', start_time)
-        #import_csv_damp(filepath + 'DAMP0101-' + str(file_num) + '.csv', start_time)
-        imu_data = import_csv_imu(filepath + 'IMU0101-' + str(file_num) + '.csv', start_time, f_acc, f_gyro)
-        (f_acc, f_gyro) = imu_data
+        import_csv_abs(filepath + 'ABS0101-' + str(file_num) + '.csv', start_time)
+        import_csv_damp(filepath + 'DAMP0101-' + str(file_num) + '.csv', start_time)
+        #imu_data = import_csv_imu(filepath + 'IMU0101-' + str(file_num) + '.csv', start_time, f_acc, f_gyro)
+        #(f_acc, f_gyro) = imu_data
         imported_files += 1
     except ValueError as e:
         #print(e)
