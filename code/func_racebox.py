@@ -3,6 +3,7 @@ import csv
 from conf_influxdb import *
 from kalman_filters import *
 from variances import *
+from lap_timer import *
 import math
 from datetime import datetime
 from filterpy.kalman import KalmanFilter
@@ -52,6 +53,7 @@ def open_file(filefullpath):
         for i in range (1, 13):
             next(csvreader_object)
             
+        lap_timer = LapTimer()
         data = csv.DictReader(file)
         points = []
         startTime = datetime.now()
@@ -96,6 +98,11 @@ def open_file(filefullpath):
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter, var_acc, var_gps)
             f_gyro = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, var_gyro)
             
+            if row_counter == 0:
+               lap_timer.init_position(f_gps[1].x[0][0], f_gps[0].x[0][0])
+            else:
+               time, last_time, best_time, lap_counter = lap_timer.check(f_gps[1].x[0][0], f_gps[0].x[0][0])
+
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
                 rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
@@ -104,6 +111,30 @@ def open_file(filefullpath):
                 yaw += rotation_angles[2]
 
                 yaw = wrap_angle(yaw)
+
+                point = (
+                    Point('lap_times')
+                    .tag("lap_time", 'last')
+                    .field("last_time", last_time)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                point = (
+                    Point('lap_times')
+                    .tag('lap_time', 'best')
+                    .field('best_time', best_time)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                point = (
+                    Point('lap_times')
+                    .tag('lap_time', 'lap_number')
+                    .field('lap_counter', lap_counter)
+                    .time(timestamp)
+                )
+                points.append(point)
 
                 # ang acc x
                 point = (
