@@ -2,15 +2,17 @@ import time
 import json
 from math import sqrt, pow
 from typing import Tuple
+from datetime import datetime
+from dateutil import parser
 
 
 class LapTimer:
     def __init__(
         self,
-        x1: float = 18.712384,
-        y1: float = 54.178948,
-        x2: float = 18.712373,
-        y2: float = 54.178809,
+        x1: float = 18.713115,
+        y1: float = 54.178896,
+        x2: float = 18.713045,
+        y2: float = 54.178709,
     ) -> None:
         self.x1 = x1
         self.y1 = y1
@@ -30,19 +32,20 @@ class LapTimer:
                 self.x2 = data["finish"]["x2"]
                 self.y2 = data["finish"]["y2"]
 
-        self.time = 0.0
         self.last_time = 0.0
         self.best_time = 0.0
-
+        self.best_lap_numer = 0
+        self.last_lap_start = 0.
         self.lap_counter = -1
         self.last_x = 0.0
         self.last_y = 0.0
 
-    def init_position(self, x: float, y: float) -> None:
+    def init_position(self, x: float, y: float, time: str) -> None:
         self.last_x = x
         self.last_y = y
+        self.last_lap_start = parser.parse(time)
 
-    def check(self, x: float, y: float, timestamp: string) -> Tuple[float, float, float, int]:
+    def check(self, x: float, y: float, timestamp: str) -> Tuple[float, float, float, int]:
         def dist(x1: float, y1: float, x2: float, y2: float) -> float:
             return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2))
 
@@ -75,10 +78,14 @@ class LapTimer:
             and a2 + b2 <= c2 * 1.01
             and a2 + b2 >= c2 * 0.99
         ):
-            self.last_time = timestamp - self.time
-            self.time = timestamp
+            current_time = parser.parse(timestamp)
+
+            
+            self.last_time = (current_time - self.last_lap_start).total_seconds()
+            self.last_lap_start = current_time
             if self.last_time < self.best_time or self.lap_counter == 0:
                 self.best_time = self.last_time
+                self.best_lap_numer = self.lap_counter
             self.lap_counter += 1
 
         if self.lap_counter == 0:
@@ -87,4 +94,4 @@ class LapTimer:
         self.last_x = x
         self.last_y = y
 
-        return (self.time, self.last_time, self.best_time, self.lap_counter)
+        return (self.last_time, self.best_time,self.best_lap_numer, self.lap_counter)

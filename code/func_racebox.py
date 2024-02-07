@@ -15,6 +15,9 @@ path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23_11_05_P
 GFORCE =  9.80665 # m/s2
 TIMESTEP = 0.04 # s
 file_counter = 0
+lap_counter = 0
+best_lap_number = 0
+best_time = 0.
 var_gyro = 0.
 var_acc = 0.
 
@@ -48,6 +51,9 @@ def find_racebox(filepath):
 def open_file(filefullpath):
     global lon_prev
     global lat_prev
+    global lap_counter
+    global best_lap_number
+    global best_time
     with open(filefullpath, 'r') as file:
         csvreader_object = csv.reader(file)
         for i in range (1, 13):
@@ -90,7 +96,6 @@ def open_file(filefullpath):
             GForceZ = float(row['GForceZ']) * GFORCE
 
             timestamp = row['Time']
-            print(type(timestamp))
 
       #vel_x = f_gps[0].x[1][0] * conv_rate_lon
       #vel_y = f_gps[1].x[1][0] * conv_rate_lat
@@ -100,9 +105,9 @@ def open_file(filefullpath):
             f_gyro = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, var_gyro)
             
             if row_counter == 0:
-               lap_timer.init_position(f_gps[1].x[0][0], f_gps[0].x[0][0])
+               lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
             else:
-               time, last_time, best_time, lap_counter = lap_timer.check(f_gps[1].x[0][0], f_gps[0].x[0][0])
+               last_time, best_time, best_lap_number, lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
 
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
@@ -125,6 +130,14 @@ def open_file(filefullpath):
                     Point('lap_times')
                     .tag('lap_time', 'best')
                     .field('best_time', best_time)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                point = (
+                    Point('lap_times')
+                    .tag('lap_time', 'best_lap_number')
+                    .field('best_lap_number', best_lap_number)
                     .time(timestamp)
                 )
                 points.append(point)
@@ -191,20 +204,6 @@ def open_file(filefullpath):
                 )
                 points.append(point)
 
-            #roll = f_gyro[0].x[0][0]
-            #pitch = f_gyro[1].x[0][0]
-            #yaw = f_gyro[2].x[0][0]
-
-
-            #if (yaw < (-360)) or (yaw > 360):
-                #print(yaw)
-                
-            
-      
-            #velocities =velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z)
-            #vel_x += velocities[0]
-            #vel_y += velocities[1]
-            #vel_z += velocities[2]
 
             vel_x += ((f_acc[0].x[1][0]) * 3.6)
             vel_y += ((f_acc[1].x[1][0]) * 3.6)
