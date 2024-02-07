@@ -90,6 +90,7 @@ def open_file(filefullpath):
             GForceZ = float(row['GForceZ']) * GFORCE
 
             timestamp = row['Time']
+            print(type(timestamp))
 
       #vel_x = f_gps[0].x[1][0] * conv_rate_lon
       #vel_y = f_gps[1].x[1][0] * conv_rate_lat

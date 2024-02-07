@@ -42,7 +42,7 @@ class LapTimer:
         self.last_x = x
         self.last_y = y
 
-    def check(self, x: float, y: float) -> Tuple[float, float, float, int]:
+    def check(self, x: float, y: float, timestamp: string) -> Tuple[float, float, float, int]:
         def dist(x1: float, y1: float, x2: float, y2: float) -> float:
             return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2))
 
@@ -75,8 +75,8 @@ class LapTimer:
             and a2 + b2 <= c2 * 1.01
             and a2 + b2 >= c2 * 0.99
         ):
-            self.last_time = time.time() - self.time
-            self.time = time.time()
+            self.last_time = timestamp - self.time
+            self.time = timestamp
             if self.last_time < self.best_time or self.lap_counter == 0:
                 self.best_time = self.last_time
             self.lap_counter += 1
