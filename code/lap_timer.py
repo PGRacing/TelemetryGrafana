@@ -34,11 +34,12 @@ class LapTimer:
 
         self.last_time = 0.0
         self.best_time = 0.0
-        self.best_lap_numer = 0
         self.last_lap_start = 0.
-        self.lap_counter = -1
+        self.lap_diff = 0
+        self.lap_counter = 0
         self.last_x = 0.0
         self.last_y = 0.0
+        self.best_lap = False
 
     def init_position(self, x: float, y: float, time: str) -> None:
         self.last_x = x
@@ -48,6 +49,9 @@ class LapTimer:
     def check(self, x: float, y: float, timestamp: str) -> Tuple[float, float, float, int]:
         def dist(x1: float, y1: float, x2: float, y2: float) -> float:
             return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2))
+
+        self.lap_diff = 0
+        self.best_lap = False
 
         cross_x = (
             (self.x1 * self.y2 - self.y1 * self.x2) * (self.last_x - x)
@@ -73,20 +77,18 @@ class LapTimer:
         c2 = dist(self.last_x, self.last_y, x, y)
 
         if (
-            a1 + b1 <= c1 * 1.01
-            and a1 + b1 >= c1 * 0.99
-            and a2 + b2 <= c2 * 1.01
-            and a2 + b2 >= c2 * 0.99
+            a1 + b1 <= c1 * 1.001
+            and a1 + b1 >= c1 * 0.999
+            and a2 + b2 <= c2 * 1.001
+            and a2 + b2 >= c2 * 0.999
         ):
             current_time = parser.parse(timestamp)
+            if (current_time - self.last_lap_start).total_seconds() > 1.:
+                self.last_time = (current_time - self.last_lap_start).total_seconds()
+                self.last_lap_start = current_time
+                self.lap_diff = 1
+                self.lap_counter += 1
 
-            
-            self.last_time = (current_time - self.last_lap_start).total_seconds()
-            self.last_lap_start = current_time
-            if self.last_time < self.best_time or self.lap_counter == 0:
-                self.best_time = self.last_time
-                self.best_lap_numer = self.lap_counter
-            self.lap_counter += 1
 
         if self.lap_counter == 0:
             self.last_time = 0.
@@ -94,4 +96,4 @@ class LapTimer:
         self.last_x = x
         self.last_y = y
 
-        return (self.last_time, self.best_time,self.best_lap_numer, self.lap_counter)
+        return (self.last_time, self.lap_diff, self.lap_counter)

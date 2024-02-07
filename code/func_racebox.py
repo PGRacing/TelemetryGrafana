@@ -107,7 +107,11 @@ def open_file(filefullpath):
             if row_counter == 0:
                lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
             else:
-               last_time, best_time, best_lap_number, lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
+               last_time, lap_diff, inner_lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
+               lap_counter += lap_diff
+               if last_time < best_time and inner_lap_counter != 0:
+                    best_time = last_time
+                    best_lap_number = lap_counter
 
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
