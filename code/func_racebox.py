@@ -109,7 +109,7 @@ def open_file(filefullpath):
             else:
                last_time, lap_diff, inner_lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
                lap_counter += lap_diff
-               if last_time < best_time and inner_lap_counter != 0:
+               if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
                     best_time = last_time
                     best_lap_number = lap_counter
 
