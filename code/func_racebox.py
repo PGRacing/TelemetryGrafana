@@ -16,6 +16,7 @@ GFORCE =  9.80665 # m/s2
 TIMESTEP = 0.04 # s
 file_counter = 0
 lap_counter = 0
+last_time = 0.
 best_lap_number = 0
 best_time = 0.
 var_gyro = 0.
@@ -54,6 +55,7 @@ def open_file(filefullpath):
     global lap_counter
     global best_lap_number
     global best_time
+    global last_time
     with open(filefullpath, 'r') as file:
         csvreader_object = csv.reader(file)
         for i in range (1, 13):
