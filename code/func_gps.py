@@ -27,7 +27,7 @@ def nmea_checksum(sentence: str):
     except ValueError as e:
        return False
 
-def import_csv_gps(filepath, f_gps):
+def import_csv_gps(filepath):
     # CSV column names as following:
     # timestamp,LOG,utc,pos status,lat,lat dir,lon,lon dir,speed,track,date,mag var,var dir,mode ind,chs,ter
     # date like '2023-11-04'
@@ -37,7 +37,7 @@ def import_csv_gps(filepath, f_gps):
     start_time = 0
     points = []
     new_row = ''
-    startTime = datetime.now()
+    startTime = datetime.datetime.now()
     previous_timestamp = None
     previous_csv_timestamp = None
 
@@ -49,7 +49,7 @@ def import_csv_gps(filepath, f_gps):
             break
 
     if start_time == 0:
-        return 0, f_gps
+        return 0
   #print(start_time)
 
     for row in csv_reader:
@@ -75,22 +75,22 @@ def import_csv_gps(filepath, f_gps):
         lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
         lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)
 
-        f_gps = kalman_gps(f_gps, lat, lon, line_count)
+        #f_gps = kalman_gps(f_gps, lat, lon, line_count)
 
         point = (
             Point('gps')
             .tag("ID", "gps_position")
-            .field("latitude", f_gps[0].x[0][0])
+            .field("latitude", lat)
             .time(timestamp)
         )
-        points.append(point)
+        #points.append(point)
         point = (
             Point('gps')
             .tag("ID", "gps_position")
-            .field("longitude", f_gps[1].x[0][0])
+            .field("longitude", lon)
             .time(timestamp)
         )
-        points.append(point)
+        #points.append(point)
         point = (
             Point('gps')
             .tag("ID", "gps_position")
@@ -104,12 +104,12 @@ def import_csv_gps(filepath, f_gps):
         line_count += 1
 
     write_api.write(bucket=bucket, org=org, record=points)
-    endTime = datetime.now()
+    endTime = datetime.datetime.now()
     print(f'GPS: Imported {line_count} rows in {endTime - startTime}')
 
     file.close()
 
-    return start_time, f_gps
+    return start_time
 
 def convert_csv_gps(filepath):
   # convert csv data to csv in standard for eg. gpsvisualizer.com

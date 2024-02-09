@@ -124,7 +124,8 @@ def setup_kalman_filter():
     # variance
     # for 0.00001 speed has too much noise
     # for 0.001 filter has too much delay  // in my opinion
-    var = 0.0001
+    var = 0.014
+    var_a = 0.5 * 530
 
     for i in range(5):
         f[i].x = np.array([[0.], [0.]])  # initial state (position and velocity)
@@ -132,8 +133,8 @@ def setup_kalman_filter():
         f[i].H = np.array([[1., 0.]])  # Measurement function
         f[i].P = np.array([[1000., 0.], [0., 1000.]])  # covariance matrix
         # proces noise and measurement noise needs to be fine-tuned
-        f[i].R = np.array([[var ** 2]])  # measurement noise
-        f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var)  # process noise
+        f[i].R = np.array([[var]])  # measurement noise
+        f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var_a)  # process noise
 
 
 def filter_data(data, ID):

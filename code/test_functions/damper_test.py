@@ -95,7 +95,7 @@ def read_file(file_path):
             f[i].x = np.array([[0.], [0.]])  # initial state (position and velocity)
             f[i].F = np.array([[1., 0.004], [0., 1.]])  # state transition matrix
             f[i].H = np.array([[1., 0.]])  # Measurement function
-            f[i].P = np.array([[1000., 0.], [1000., 0.]])  # covariance matrix
+            f[i].P = np.array([[1000., 0.], [0., 1000.]])  # covariance matrix
             # proces noise and measurement noise needs to be fine tuned
             # measurement noise smaller -> kalman filter follows raw data more closely
             # process noise bigger -> kalman filter follows raw data more closely
