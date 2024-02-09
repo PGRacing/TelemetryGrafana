@@ -10,8 +10,14 @@ TIMESTEP = 0.04 # s
 # for our telemetry
 #TIMESTEP = 0.004
 
-def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number, var_acc, var_gps):
-    var = 0.01
+VAR_ACC = 0.0000053744
+VAR_GYRO = 0.0000053744
+VAR_GPS = 0.000000000003664
+
+def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number):
+    var_x = 0.5 * 7.58
+    var_y = 0.5 * 16.4
+    var_z = 0.5 * 11.5
     if row_number == 0:
         for i in range(3):
             f[i] = KalmanFilter(dim_x=2, dim_z=1)
@@ -30,8 +36,10 @@ def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number, var_a
             f[i].H = np.array([[1., 0.]])  # Measurement function
             f[i].P = np.array([[10., 0.], 
                                 [0., 10.]])  # covariance matrix
-            f[i].R = np.array([[var_acc]])  # measurement noise
-            f[i].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var)  # process noise
+            f[i].R = np.array([[VAR_ACC]])  # measurement noise
+        f[0].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_x)  # process noise
+        f[1].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_y)
+        f[2].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_z)
 
 
     f[0].predict()
@@ -43,8 +51,13 @@ def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number, var_a
 
     return f
 
-def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev, var_gyro):
-    var = 0.01
+def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev):
+    var_x = 0.5 * 28.5
+    var_y = 0.5 * 69.9
+    var_z = 0.5 * 370.
+    var_fi = 0.5 * 8.022
+    var_theta = 0.5 * 36.517
+    var_psi = 0.5 * 134.03
     fi = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt(f_acc[1].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     theta = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt(f_acc[0].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     if row_number == 0:
@@ -74,11 +87,17 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
                                 [0., 1.]])  # state transition matrix
             f_gyro[i].H = np.array([[1., 0.],
                                     [0., 1.]])  # Measurement function
-            f_gyro[i].P = np.array([[4., 0.], 
+            f_gyro[i].P = np.array([[0.0004, 0.], 
                                     [0., 0.]])  # covariance matrix
-            f_gyro[i].R = np.array([[var, 0.],
-                                    [0., var_gyro]])  # measurement noise
-            f_gyro[i].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var)  # process noise
+        f_gyro[0].R = np.array([[var_fi, 0.],
+                                [0., VAR_GYRO]])
+        f_gyro[1].R = np.array([[var_theta, 0.],
+                                [0., VAR_GYRO]])
+        f_gyro[2].R = np.array([[var_psi, 0.],
+                                [0., VAR_GYRO]])  # measurement noise
+        f_gyro[0].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_x)  # process noise
+        f_gyro[1].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_y)
+        f_gyro[2].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_z)
 
 
     f_gyro[0].predict()
@@ -91,9 +110,9 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
     return f_gyro
 
 
-def kalman_gps(f, lat, lon, row_number, var_gps):
+def kalman_gps(f, lat, lon, row_number):
     signal_loss = False
-    var = 0.0000001
+    var = 0.5 * 13.08
     if row_number == 0:
         for i in range(2):
             f[i] = KalmanFilter(dim_x=2, dim_z=1)
@@ -109,7 +128,7 @@ def kalman_gps(f, lat, lon, row_number, var_gps):
             f[i].H = np.array([[1., 0.]])  # Measurement function
             f[i].P = np.array([[10., 0.], 
                                 [0., 10.]])  # covariance matrix
-            f[i].R = np.array([[var]])  # measurement noise
+            f[i].R = np.array([[VAR_GPS]])  # measurement noise
             f[i].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var)  # process noise
 
     if lat == '':
@@ -142,15 +161,21 @@ def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
 
     return ang_acc_x, ang_acc_y, ang_acc_z
 
-
+# SOMETHING'S STILL BROKEN HERE
 def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev):
     #roll_angle = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     #yaw_angle = yaw_previous + (f_gyro[2].x[1][0] * timestep)
     #return roll_angle, pitch_angle, yaw_angle
     roll = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * TIMESTEP
+    if gyro_x_prev > f_gyro[0].x[1][0]:
+        roll *= -1.
     pitch = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * TIMESTEP
+    if gyro_y_prev > f_gyro[1].x[1][0]:
+        pitch *= -1.
     yaw = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * TIMESTEP
+    if gyro_z_prev > f_gyro[2].x[1][0]:
+        yaw *= -1.
 
     return roll, pitch, yaw
 

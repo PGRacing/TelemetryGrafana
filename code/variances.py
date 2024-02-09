@@ -1,6 +1,8 @@
 import csv
 import numpy as np
 
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23_11_05_Pszczolki/'
+
 def calc_var_acc(file_path, sensor):
     with (open(file_path, "r") as file):
         csvreader_object = csv.reader(file)
@@ -12,19 +14,20 @@ def calc_var_acc(file_path, sensor):
         for i in range(3):
             acc_data.append([])
         for row in data:
-            if sensor == 'racebox':
-                acc_data[0].append(float(row['GForceX']))
-                acc_data[1].append(float(row['GForceY']))
-                acc_data[2].append(float(row['GForceX']))
-            else:
-                if (float(row['acc_x'])) != 0.:
-                    acc_data[0].append(float(row['acc_x']))
-                    acc_data[1].append(float(row['acc_y']))
-                    acc_data[2].append(float(row['acc_z']))
-            if len(acc_data[0]) > 1000 and \
-                len(acc_data[1]) > 1000 and\
-                len(acc_data[2]) > 1000:
-                break
+            if float(row['Record']) >= 4098:
+                if sensor == 'racebox':
+                    acc_data[0].append(float(row['GForceX']))
+                    acc_data[1].append(float(row['GForceY']))
+                    acc_data[2].append(float(row['GForceX']))
+                else:
+                    if (float(row['acc_x'])) != 0.:
+                        acc_data[0].append(float(row['acc_x']))
+                        acc_data[1].append(float(row['acc_y']))
+                        acc_data[2].append(float(row['acc_z']))
+                if len(acc_data[0]) > 730 and \
+                    len(acc_data[1]) > 730 and\
+                    len(acc_data[2]) > 730:
+                    break
         var_x = np.var(acc_data[0])
         var_y = np.var(acc_data[1])
         var_z = np.var(acc_data[2])
@@ -44,20 +47,21 @@ def calc_var_gyro(file_path, sensor):
             gyro_data.append([])
 
         for row in data:
-            if sensor == 'racebox':
-                gyro_data[0].append(float(row['GyroX']))
-                gyro_data[1].append(float(row['GyroY']))
-                gyro_data[2].append(float(row['GyroZ']))
-            else:
-                if (float(row['gyro_x'])) != 0.:
-                    gyro_data[0].append(float(row['gyro_x']))
-                    gyro_data[1].append(float(row['gyro_y']))
-                    gyro_data[2].append(float(row['gyro_z']))
+            if float(row['Record']) >= 4098:
+                if sensor == 'racebox':
+                    gyro_data[0].append(float(row['GyroX']))
+                    gyro_data[1].append(float(row['GyroY']))
+                    gyro_data[2].append(float(row['GyroZ']))
+                else:
+                    if (float(row['gyro_x'])) != 0.:
+                        gyro_data[0].append(float(row['gyro_x']))
+                        gyro_data[1].append(float(row['gyro_y']))
+                        gyro_data[2].append(float(row['gyro_z']))
 
-            if len(gyro_data[0]) > 1000 and \
-                len(gyro_data[1]) > 1000 and\
-                len(gyro_data[2]) > 1000:
-                break
+                if len(gyro_data[0]) > 730 and \
+                    len(gyro_data[1]) > 730 and\
+                    len(gyro_data[2]) > 730:
+                    break
         var_x = np.var(gyro_data[0])
         var_y = np.var(gyro_data[1])
         var_z = np.var(gyro_data[2])
@@ -77,11 +81,12 @@ def calc_var_gps(file_path, sensor):
             gps_data.append([])
         if sensor == 'racebox':
             for row in data:
-                gps_data[0].append(float(row['Longitude']))
-                gps_data[1].append(float(row['Latitude']))
-                if len(gps_data[0]) > 1000 and \
-                    len(gps_data[1]) > 1000:
-                    break
+                if float(row['Record']) >= 4098:
+                    gps_data[0].append(float(row['Longitude']))
+                    gps_data[1].append(float(row['Latitude']))
+                    #print(f'adding row {row["Record"]}')
+                    if len(gps_data[0]) > 730:
+                        break
         else:
             for row in data:
                 if (float(row['lon'])) != '':
@@ -99,3 +104,13 @@ def calc_var_gps(file_path, sensor):
 
         absolute_var = (var_x + var_y)/2
     return absolute_var
+
+acc = calc_var_acc(file_path=path + 'RB-1.csv', sensor='racebox')
+print(f'acc variance: {acc:.10f}')
+# for racebox: 0.0000053744
+gyro = calc_var_gyro(file_path=path + 'RB-1.csv', sensor='racebox')
+print(f'gyro variance: {gyro:.10f}')
+# for racebox: 0.0000053744
+gps = calc_var_gps(file_path=path + 'RB-1.csv', sensor='racebox')
+print(f'gps variance: {gps:.15f}')
+# for racebox: 0.000000000003664
