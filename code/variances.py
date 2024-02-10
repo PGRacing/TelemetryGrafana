@@ -105,12 +105,12 @@ def calc_var_gps(file_path, sensor):
         absolute_var = (var_x + var_y)/2
     return absolute_var
 
-acc = calc_var_acc(file_path=path + 'RB-1.csv', sensor='racebox')
-print(f'acc variance: {acc:.10f}')
+#acc = calc_var_acc(file_path=path + 'RB-1.csv', sensor='racebox')
+#print(f'acc variance: {acc:.10f}')
 # for racebox: 0.0000053744
-gyro = calc_var_gyro(file_path=path + 'RB-1.csv', sensor='racebox')
-print(f'gyro variance: {gyro:.10f}')
+#gyro = calc_var_gyro(file_path=path + 'RB-1.csv', sensor='racebox')
+#print(f'gyro variance: {gyro:.10f}')
 # for racebox: 0.0000053744
-gps = calc_var_gps(file_path=path + 'RB-1.csv', sensor='racebox')
-print(f'gps variance: {gps:.15f}')
+#gps = calc_var_gps(file_path=path + 'RB-1.csv', sensor='racebox')
+#print(f'gps variance: {gps:.15f}')
 # for racebox: 0.000000000003664

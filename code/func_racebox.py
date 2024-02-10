@@ -40,7 +40,7 @@ def find_racebox(filepath):
     global var_gps
 
     startProgram = datetime.now()
-    for i in range (1, 5):
+    for i in range (1, 16):
         file_counter += 1
         open_file(filepath + 'RB-' + str(i) + '.csv')
     endProgram = datetime.now()
@@ -101,7 +101,7 @@ def open_file(filefullpath):
 
             f_gps = kalman_gps(f_gps, float(row['Latitude']), float(row['Longitude']), row_counter)
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter)
-            f_gyro = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev)
+            f_gyro, roll, pitch, yaw = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, yaw)
             
             if row_counter == 0:
                lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
@@ -114,10 +114,16 @@ def open_file(filefullpath):
 
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
-                rotation_angles = calculate_angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
-                roll += rotation_angles[0]
-                pitch += rotation_angles[1]
-                yaw += rotation_angles[2]
+                #rotation_angles = angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z, f_acc)
+                #roll += rotation_angles[0]
+                #pitch += rotation_angles[1]
+                #yaw += rotation_angles[2]
+                #yaw = f_gyro[2].x[0][0]
+                roll = f_gyro[0].x[0][0]
+                pitch = f_gyro[1].x[0][0]
+                #yaw = f_gyro[2].x[0][0]
+
+
 
                 yaw = wrap_angle(yaw)
 

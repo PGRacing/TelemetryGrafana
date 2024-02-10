@@ -51,17 +51,21 @@ def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number):
 
     return f
 
-def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev):
+def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev, yaw):
     var_x = 0.5 * 28.5
     var_y = 0.5 * 69.9
     var_z = 0.5 * 370.
-    var_fi = 0.5 * 8.022
-    var_theta = 0.5 * 36.517
-    var_psi = 0.5 * 134.03
+    var_fi = 0.7 * 8.022
+    var_theta = 0.7 * 36.517
+    var_psi = 0.7 * 134.03
     fi = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt(f_acc[1].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     theta = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt(f_acc[0].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     if row_number == 0:
         psi = 0.
+    elif abs(f_gyro[0].x[1][0]) < 1. \
+        and abs(f_gyro[1].x[1][0]) < 1. \
+        and abs(f_gyro[1].x[1][0]) < 1. :
+        psi = yaw
     else:
         lat1 = math.radians(f_gps[0].x[0][0])
         lat2 = math.radians(y_prev)
@@ -72,7 +76,7 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
 
     if row_number == 0:
         for i in range(3):
-            f_gyro[i] = KalmanFilter(dim_x=2, dim_z=2)
+            f_gyro[i] = KalmanFilter(dim_x=2, dim_z=1)
             if i == 0:
                 f_gyro[i].x = np.array([[fi], 
                                         [0.]])  # initial state (position and velocity)
@@ -84,30 +88,26 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
                                         [0.]])
             
             f_gyro[i].F = np.array([[1., TIMESTEP], 
-                                [0., 1.]])  # state transition matrix
-            f_gyro[i].H = np.array([[1., 0.],
-                                    [0., 1.]])  # Measurement function
+                                    [0., 1.]])  # state transition matrix
+            f_gyro[i].H = np.array([[1., 0.]])  # Measurement function
             f_gyro[i].P = np.array([[0.0004, 0.], 
                                     [0., 0.]])  # covariance matrix
-        f_gyro[0].R = np.array([[var_fi, 0.],
-                                [0., VAR_GYRO]])
-        f_gyro[1].R = np.array([[var_theta, 0.],
-                                [0., VAR_GYRO]])
-        f_gyro[2].R = np.array([[var_psi, 0.],
-                                [0., VAR_GYRO]])  # measurement noise
+        f_gyro[0].R = np.array([[VAR_GYRO]])
+        f_gyro[1].R = np.array([[VAR_GYRO]])
+        f_gyro[2].R = np.array([[VAR_GYRO]])  # measurement noise
         f_gyro[0].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_x)  # process noise
         f_gyro[1].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_y)
         f_gyro[2].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_z)
 
 
     f_gyro[0].predict()
-    f_gyro[0].update([fi, gyro_x])
+    f_gyro[0].update(gyro_x)
     f_gyro[1].predict()
-    f_gyro[1].update([theta, gyro_y])
+    f_gyro[1].update(gyro_y)
     f_gyro[2].predict()
-    f_gyro[2].update([psi, gyro_z])
+    f_gyro[2].update(gyro_z)
 
-    return f_gyro
+    return f_gyro, fi, theta, psi
 
 
 def kalman_gps(f, lat, lon, row_number):
@@ -162,22 +162,33 @@ def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
     return ang_acc_x, ang_acc_y, ang_acc_z
 
 # SOMETHING'S STILL BROKEN HERE
-def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev):
+def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev, f_acc):
     #roll_angle = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    #yaw_angle = yaw_previous + (f_gyro[2].x[1][0] * timestep)
+    #yaw = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     #return roll_angle, pitch_angle, yaw_angle
     roll = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * TIMESTEP
-    if gyro_x_prev > f_gyro[0].x[1][0]:
+    if abs(gyro_x_prev) > abs(f_gyro[0].x[1][0]):
         roll *= -1.
     pitch = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * TIMESTEP
-    if gyro_y_prev > f_gyro[1].x[1][0]:
+    if abs(gyro_y_prev) > abs(f_gyro[1].x[1][0]):
         pitch *= -1.
     yaw = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * TIMESTEP
-    if gyro_z_prev > f_gyro[2].x[1][0]:
-        yaw *= -1.
+    #if abs(gyro_z_prev) > abs(f_gyro[2].x[1][0]):
+    #    yaw *= -1.
 
     return roll, pitch, yaw
+
+def angles(f_gyro, prev_x, prev_y, prev_z):
+    delta_x = float(f_gyro[0].x[1][0]) - prev_x
+    delta_y = float(f_gyro[1].x[1][0]) - prev_y
+    delta_z = float(f_gyro[2].x[1][0]) - prev_z
+
+    ang_acc_x = delta_x*TIMESTEP
+    ang_acc_y = delta_y*TIMESTEP
+    ang_acc_z = delta_z*TIMESTEP
+
+    return ang_acc_x, ang_acc_y, ang_acc_z
 
 def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
     area_x = (((f_acc[0].x[0][0] + acc_prev_x) / 2.) * TIMESTEP) * 0.01/(1/3600)
