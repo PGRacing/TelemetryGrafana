@@ -96,7 +96,7 @@ def import_csv_damp(filepath, start_time):
         point = (
             Point('damp')
             .tag("ID", f'{row["ID"]}')
-            .field("velocity", data[1]/1000.0)
+            .field("velocity", data[1])
             .time(timestamp)
         )
         points.append(point)
