@@ -1,5 +1,7 @@
 import datetime
 
+COEFFICIENT = 0.94865437
+
 # csv timestamp like '00:00:08:214'
 # gps timestamp like '081149.88'
 # gps date like '051123'
@@ -43,7 +45,7 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     micros = int(gps_timestamp[7:])
     gps_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=micros)
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
-    delta = timedelta.total_seconds() * 0.9465
+    delta = timedelta.total_seconds() * COEFFICIENT
     dtdelta = datetime.timedelta(seconds=delta)
     return gps_datetime - dtdelta
 
@@ -62,7 +64,7 @@ def correct_csv_timestamp(previous_csv_timestamp, current_csv_timestamp, previou
     curr_timedelta = csv_timestamp_to_timedelta(current_csv_timestamp)
     timestamp_delta_csv = curr_timedelta - prev_timedelta
     total_seconds = timestamp_delta_csv.total_seconds()
-    total_seconds *= 0.9465
+    total_seconds *= COEFFICIENT
     timedelta = datetime.timedelta(seconds=total_seconds)
     return previous_timestamp + timedelta
 
@@ -73,17 +75,17 @@ def correct_csv_timestamp_millis(previous_csv_timestamp, current_csv_timestamp, 
     previous_csv_timestamp = csv_millis_timestamp_to_timedelta(previous_csv_timestamp)
     timestamp_delta_csv = current_csv_timestamp - previous_csv_timestamp
     total_seconds = timestamp_delta_csv.total_seconds()
-    total_seconds *= 0.9465
+    total_seconds *= COEFFICIENT
     delta = datetime.timedelta(seconds=total_seconds)
     return previous_timestamp + delta
 
 def correct_init_time(init_time):
-    seconds = init_time.total_seconds() * 0.9465
+    seconds = init_time.total_seconds() * COEFFICIENT
     corrected_start_time = datetime.timedelta(seconds=seconds)
     return corrected_start_time
 
 def correct_init_time_millis(init_time):
-    init_time *= 0.9465
+    init_time *= COEFFICIENT
     corrected_start_time = datetime.timedelta(milliseconds=init_time)
     return corrected_start_time
 
