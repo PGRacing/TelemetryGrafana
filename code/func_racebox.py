@@ -101,7 +101,7 @@ def open_file(filefullpath):
 
             f_gps = kalman_gps(f_gps, float(row['Latitude']), float(row['Longitude']), row_counter)
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter)
-            f_gyro, roll, pitch, yaw = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, yaw)
+            f_gyro, yaw = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, yaw)
             
             if row_counter == 0:
                lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
@@ -114,17 +114,8 @@ def open_file(filefullpath):
 
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
-                #rotation_angles = angles(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z, f_acc)
-                #roll += rotation_angles[0]
-                #pitch += rotation_angles[1]
-                #yaw += rotation_angles[2]
-                #yaw = f_gyro[2].x[0][0]
-                roll = f_gyro[0].x[0][0]
-                pitch = f_gyro[1].x[0][0]
-                #yaw = f_gyro[2].x[0][0]
-
-
-
+                roll += f_gyro[0].x[1][0]
+                pitch += f_gyro[1].x[1][0]
                 yaw = wrap_angle(yaw)
 
                 point = (
@@ -208,7 +199,7 @@ def open_file(filefullpath):
                 point = (
                     Point('angles')
                     .tag('axis', 'z')
-                    .field('yaw_angle', float(yaw))
+                    .field('yaw_angle', yaw)
                     .time(timestamp)
                 )
                 points.append(point)
@@ -218,9 +209,9 @@ def open_file(filefullpath):
             vel_y += ((f_acc[1].x[1][0]) * 3.6)
             vel_z += ((f_acc[2].x[1][0]) * 3.6)
 
-            ang_vel_prev_x = f_gyro[0].x[1][0]
-            ang_vel_prev_y = f_gyro[1].x[1][0]
-            ang_vel_prev_z = f_gyro[2].x[1][0]
+            ang_vel_prev_x = f_gyro[0].x[0][0]
+            ang_vel_prev_y = f_gyro[1].x[0][0]
+            ang_vel_prev_z = f_gyro[2].x[0][0]
 
             lat_prev = f_gps[0].x[0][0]
             lon_prev = f_gps[1].x[0][0]
@@ -279,7 +270,7 @@ def open_file(filefullpath):
             point = (
                 Point('gyro')
                 .tag("axis", "x")
-                .field("gyro_x", float(f_gyro[0].x[1][0]))
+                .field("gyro_x", float(f_gyro[0].x[0][0]))
                 .time(timestamp)
             )
             points.append(point)
@@ -288,7 +279,7 @@ def open_file(filefullpath):
             point = (
                 Point('gyro')
                 .tag("axis", "y")
-                .field("gyro_y", float(f_gyro[1].x[1][0]))
+                .field("gyro_y", float(f_gyro[1].x[0][0]))
                 .time(timestamp)
             )
             points.append(point)
@@ -297,7 +288,7 @@ def open_file(filefullpath):
             point = (
                 Point('gyro')
                 .tag("axis", "z")
-                .field("gyro_z", float(f_gyro[2].x[1][0]))
+                .field("gyro_z", float(f_gyro[2].x[0][0]))
                 .time(timestamp)
             )
             points.append(point)

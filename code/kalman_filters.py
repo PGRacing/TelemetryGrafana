@@ -52,14 +52,73 @@ def kalman_acc(f, acc_x, acc_y, acc_z, velocity_x, velocity_y, row_number):
     return f
 
 def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev, yaw):
-    var_x = 0.5 * 28.5
-    var_y = 0.5 * 69.9
-    var_z = 0.5 * 370.
+    var_x = 0.5 * 108.17
+    var_y = 0.5 * 69.2
+    var_z = 0.5 * 295.38
     var_fi = 0.7 * 8.022
     var_theta = 0.7 * 36.517
     var_psi = 0.7 * 134.03
     fi = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt(f_acc[1].x[0][0]**2 + f_acc[2].x[0][0]**2)))
     theta = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt(f_acc[0].x[0][0]**2 + f_acc[2].x[0][0]**2)))
+
+    if row_number > 1\
+        and abs(f_gyro[0].x[0][0]) < 1. \
+        and abs(f_gyro[1].x[0][0]) < 1. \
+        and abs(f_gyro[1].x[0][0]) < 1. :
+        psi = yaw
+    else:
+        lat1 = math.radians(f_gps[0].x[0][0])
+        lat2 = math.radians(y_prev)
+        lon1 = math.radians(f_gps[1].x[0][0])
+        lon2 = math.radians(x_prev)
+        psi_r = math.atan2(math.sin(lon2 - lon1) * math.cos(lat2), math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1))
+        psi = math.degrees(psi_r)
+
+    if row_number == 0:
+        for i in range(3):
+            f_gyro[i] = KalmanFilter(dim_x=2, dim_z=1)
+            if i == 0:
+                f_gyro[i].x = np.array([[0.], 
+                                        [fi]])  # initial state (position and velocity)
+            elif i == 1:
+                f_gyro[i].x = np.array([[0.], 
+                                        [theta]])
+            else:
+                f_gyro[i].x = np.array([[0.],
+                                        [psi]])
+            
+            f_gyro[i].F = np.array([[1., 1/TIMESTEP], 
+                                    [0., 1.]])  # state transition matrix
+            f_gyro[i].H = np.array([[1., 0.]])  # Measurement function
+            f_gyro[i].P = np.array([[0.0004, 0.], 
+                                    [0., 0.04]])  # covariance matrix
+        f_gyro[0].R = np.array([[VAR_GYRO]])
+        f_gyro[1].R = np.array([[VAR_GYRO]])
+        f_gyro[2].R = np.array([[VAR_GYRO]])  # measurement noise
+        f_gyro[0].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_x)  # process noise
+        f_gyro[1].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_y)
+        f_gyro[2].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_z)
+
+
+    f_gyro[0].predict()
+    f_gyro[0].update(gyro_x)
+    f_gyro[1].predict()
+    f_gyro[1].update(gyro_y)
+    f_gyro[2].predict()
+    f_gyro[2].update(gyro_z)
+
+    return f_gyro, psi
+
+def kalman_gyro2(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev, yaw):
+    var_x = 0.5 * 108.17
+    var_y = 0.5 * 69.2
+    var_z = 0.5 * 295.38
+    var_fi = 0.7 * 8.022
+    var_theta = 0.7 * 36.517
+    var_psi = 0.7 * 134.03
+    fi = math.degrees(math.atan(f_acc[1].x[0][0]/ math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
+    theta = math.degrees(math.atan(-f_acc[0].x[0][0]/ math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
+    psi = math.degrees(math.atan(f_acc[0].x[0][0]/ math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     if row_number == 0:
         psi = 0.
     elif abs(f_gyro[0].x[1][0]) < 1. \
@@ -72,7 +131,7 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
         lon1 = math.radians(f_gps[1].x[0][0])
         lon2 = math.radians(x_prev)
         psi_r = math.atan2(math.sin(lon2 - lon1) * math.cos(lat2), math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1))
-        psi = math.degrees(psi_r)
+        #psi = math.degrees(psi_r)
 
     if row_number == 0:
         for i in range(3):
@@ -87,7 +146,7 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
                 f_gyro[i].x = np.array([[psi],
                                         [0.]])
             
-            f_gyro[i].F = np.array([[1., TIMESTEP], 
+            f_gyro[i].F = np.array([[1., 1/TIMESTEP], 
                                     [0., 1.]])  # state transition matrix
             f_gyro[i].H = np.array([[1., 0.]])  # Measurement function
             f_gyro[i].P = np.array([[0.0004, 0.], 
@@ -151,9 +210,9 @@ def kalman_gps(f, lat, lon, row_number):
     return f
 
 def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
-    delta_x = float(f_gyro[0].x[1][0]) - prev_x
-    delta_y = float(f_gyro[1].x[1][0]) - prev_y
-    delta_z = float(f_gyro[2].x[1][0]) - prev_z
+    delta_x = float(f_gyro[0].x[0][0]) - prev_x
+    delta_y = float(f_gyro[1].x[0][0]) - prev_y
+    delta_z = float(f_gyro[2].x[0][0]) - prev_z
 
     ang_acc_x = delta_x/TIMESTEP
     ang_acc_y = delta_y/TIMESTEP
@@ -167,13 +226,13 @@ def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev, f_acc):
     #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     #yaw = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
     #return roll_angle, pitch_angle, yaw_angle
-    roll = ((f_gyro[0].x[1][0] + gyro_x_prev) / 2.) * TIMESTEP
+    roll = ((f_gyro[0].x[0][0] + gyro_x_prev) / 2.) * TIMESTEP
     if abs(gyro_x_prev) > abs(f_gyro[0].x[1][0]):
         roll *= -1.
-    pitch = ((f_gyro[1].x[1][0] + gyro_y_prev) / 2.) * TIMESTEP
+    pitch = ((f_gyro[1].x[0][0] + gyro_y_prev) / 2.) * TIMESTEP
     if abs(gyro_y_prev) > abs(f_gyro[1].x[1][0]):
         pitch *= -1.
-    yaw = ((f_gyro[2].x[1][0] + gyro_z_prev) / 2.) * TIMESTEP
+    yaw = ((f_gyro[2].x[0][0] + gyro_z_prev) / 2.) * TIMESTEP
     #if abs(gyro_z_prev) > abs(f_gyro[2].x[1][0]):
     #    yaw *= -1.
 
