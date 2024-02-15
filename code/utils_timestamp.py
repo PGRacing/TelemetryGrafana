@@ -1,6 +1,6 @@
 import datetime
 
-COEFFICIENT = 0.94865437
+COEFFICIENT = 0.9473
 
 # csv timestamp like '00:00:08:214'
 # gps timestamp like '081149.88'

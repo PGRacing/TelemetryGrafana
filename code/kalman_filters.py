@@ -220,34 +220,6 @@ def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
 
     return ang_acc_x, ang_acc_y, ang_acc_z
 
-# SOMETHING'S STILL BROKEN HERE
-def calculate_angles(f_gyro, gyro_x_prev, gyro_y_prev, gyro_z_prev, f_acc):
-    #roll_angle = math.degrees(math.atan2(f_acc[1].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    #pitch_angle = math.degrees(math.atan2(-f_acc[0].x[0][0], math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    #yaw = math.degrees(math.atan2(f_acc[0].x[0][0], math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    #return roll_angle, pitch_angle, yaw_angle
-    roll = ((f_gyro[0].x[0][0] + gyro_x_prev) / 2.) * TIMESTEP
-    if abs(gyro_x_prev) > abs(f_gyro[0].x[1][0]):
-        roll *= -1.
-    pitch = ((f_gyro[1].x[0][0] + gyro_y_prev) / 2.) * TIMESTEP
-    if abs(gyro_y_prev) > abs(f_gyro[1].x[1][0]):
-        pitch *= -1.
-    yaw = ((f_gyro[2].x[0][0] + gyro_z_prev) / 2.) * TIMESTEP
-    #if abs(gyro_z_prev) > abs(f_gyro[2].x[1][0]):
-    #    yaw *= -1.
-
-    return roll, pitch, yaw
-
-def angles(f_gyro, prev_x, prev_y, prev_z):
-    delta_x = float(f_gyro[0].x[1][0]) - prev_x
-    delta_y = float(f_gyro[1].x[1][0]) - prev_y
-    delta_z = float(f_gyro[2].x[1][0]) - prev_z
-
-    ang_acc_x = delta_x*TIMESTEP
-    ang_acc_y = delta_y*TIMESTEP
-    ang_acc_z = delta_z*TIMESTEP
-
-    return ang_acc_x, ang_acc_y, ang_acc_z
 
 def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
     area_x = (((f_acc[0].x[0][0] + acc_prev_x) / 2.) * TIMESTEP) * 0.01/(1/3600)
