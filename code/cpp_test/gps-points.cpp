@@ -6,13 +6,7 @@
  */
 
 #include "gps_tracker.h"
-#include "cmsis_os.h"
-#include "eeprom.h"
 #include "helper_func.h"
-#include "i2c.h"
-#include "FreeRTOS.h"
-#include "semphr.h"
-#include "structs/telemetry_data.h"
 #include "structs/vector.h"
 #include <math.h>
 
@@ -22,6 +16,7 @@ static float calculateInterpolatedTime(GPS_Point_t *currentPosition,
 		GPS_Point_t *firstPoint, GPS_Point_t *secondPoint);
 static double calculateDistance(double x1, double y1, double x2, double y2);
 
+// ZAPISANIE PUNKTÓW PIERWSZEGO KOLKA
 void recordFirstLap(GPS_TrackInfo_t *trackInfo)
 {
 	uint32_t firstPointTimestamp = 0;
@@ -149,6 +144,8 @@ static double calculateDistance(double x1, double y1, double x2, double y2)
 	return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 }
 
+
+// NIEWAŻNY
 void serializeLap(GPS_TrackInfo_t *trackInfo)
 {
 	GPS_Point_t *currentPoint = trackInfo->bestLap;
@@ -178,6 +175,7 @@ void serializeLap(GPS_TrackInfo_t *trackInfo)
 			EEPROM_PAGE_SIZE, (uint8_t*) trackInfo, sizeof(trackInfo));
 }
 
+// TEŻ NIEWAŻNE
 uint8_t deserializeLap(GPS_TrackInfo_t *outTrackInfo)
 {
 	GPS_Point_t *newPoint = NULL;
@@ -229,6 +227,7 @@ uint8_t deserializeLap(GPS_TrackInfo_t *outTrackInfo)
 	return isSuccess;
 }
 
+// LAP TIMER
 float isVehicleCrossedFinishLine(GPS_Point_t *prevVehiclePosition,
 		GPS_Point_t *newVehiclePosition, GPS_Point_t *finishLine[])
 {
