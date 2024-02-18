@@ -6,7 +6,7 @@ from test_functions.filters import low_pass_filter, get_alpha
 
 low_pass_filter_alpha_4Hz = get_alpha(0.004, 4)
 
-def import_csv_abs(filepath, start_time):
+def import_csv_abs(filepath, start_time, filenum):
     # CSV column names as following:
     # timestamp,ID,speed
     # date like '2023-11-04'
@@ -48,4 +48,5 @@ def import_csv_abs(filepath, start_time):
 
     write_api.write(bucket=bucket, org=org, record=points)
     endTime = datetime.datetime.now()
+    file.close()
     print(f'ABS: Imported {line_count} rows in {endTime - startTime}')

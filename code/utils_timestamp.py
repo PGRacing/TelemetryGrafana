@@ -1,6 +1,7 @@
 import datetime
 
-COEFFICIENT = 0.9473
+
+#COEFFICIENT = 0.9473
 
 # csv timestamp like '00:00:08:214'
 # gps timestamp like '081149.88'
@@ -35,7 +36,14 @@ def csv_timestamp_to_timedelta(csv_timestamp):
     millis = int(csv_timestamp[9:])
     return datetime.timedelta(hours=hour, minutes=minute, seconds=second, milliseconds=millis)
 
-def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
+def gps_utc_to_timedelta(time):
+    hour = int(time[:2])
+    minute = int(time[2:4])
+    second = int(time[4:6])
+    millis = int(time[7:])
+    return datetime.timedelta(hours=hour, minutes=minute, seconds=second, milliseconds=millis)
+
+def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp, file_num):
     day = int(csv_date[:2])
     month = int(csv_date[2:4])
     year = 2000 + int(csv_date[4:])
@@ -45,7 +53,7 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     micros = int(gps_timestamp[7:])
     gps_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=micros)
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
-    delta = timedelta.total_seconds() * COEFFICIENT
+    delta = timedelta.total_seconds() * GPS[file_num-1][1]
     dtdelta = datetime.timedelta(seconds=delta)
     return gps_datetime - dtdelta
 
@@ -79,8 +87,8 @@ def correct_csv_timestamp_millis(previous_csv_timestamp, current_csv_timestamp, 
     delta = datetime.timedelta(seconds=total_seconds)
     return previous_timestamp + delta
 
-def correct_init_time(init_time):
-    seconds = init_time.total_seconds() * COEFFICIENT
+def correct_init_time(init_time, file_num):
+    seconds = init_time.total_seconds() * GPS[file_num-1][1]
     corrected_start_time = datetime.timedelta(seconds=seconds)
     return corrected_start_time
 
@@ -93,3 +101,37 @@ def correct_gp_start_time(time):
     time2 = csv_timestamp_to_timedelta(time)
     start_time = correct_init_time(time2)
     return start_time
+
+GPS = [
+    [1, 0.95],
+    [2, 0.9430462149033412],
+    [3, 0.9406291849728637],
+    [4, 0.9416745061147694],
+    [5, 0.95],
+    [6, 0.9404960620665335],
+    [7, 0.9360110349987141],
+    [8, 0.95],
+    [9, 0.9426679548507199],
+    [10, 0.95],
+    [11, 0.95],
+    [12, 0.9379672377024209],
+    [13, 0.9447273229961063],
+    [14, 0.9436726029012854],
+    [15, 0.9436566560629751],
+    [16, 0.9425227813228472],
+    [17, 0.950393772064814],
+    [18, 0.9488614800759013],
+    [19, 0.9477150505792329],
+    [20, 0.95],
+    [21, 0.95],
+    [22, 0.946392240359593],
+    [23, 0.9474681445691818],
+    [24, 0.95],
+    [25, 0.95],
+    [26, 0.95],
+    [27, 0.9448502453607084],
+    [28, 0.95],
+    [29, 0.95],
+    [30, 0.95],
+    [31, 0.9429752568545199],
+    [32, 0.95],]

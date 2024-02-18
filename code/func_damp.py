@@ -58,7 +58,7 @@ f = list(KalmanFilter(dim_x=2, dim_z=1) for i in range(5))
 # 6  SW skret w prawo - spadek R
 
 
-def import_csv_damp(filepath, start_time):
+def import_csv_damp(filepath, start_time, filenum):
     # CSV column names as following:
     # timestamp,ID,delta
     # date like '2023-11-04'
@@ -116,6 +116,7 @@ def import_csv_damp(filepath, start_time):
 
     write_api.write(bucket=bucket, org=org, record=points)
     endTime = datetime.datetime.now()
+    file.close()
     print(f'DAMP: Imported {line_count} rows in {endTime - startTime}')
 
 

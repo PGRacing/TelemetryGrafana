@@ -27,7 +27,7 @@ def nmea_checksum(sentence: str):
     except ValueError as e:
        return False
 
-def import_csv_gps(filepath):
+def import_csv_gps(filepath, filenum):
     # CSV column names as following:
     # timestamp,LOG,utc,pos status,lat,lat dir,lon,lon dir,speed,track,date,mag var,var dir,mode ind,chs,ter
     # date like '2023-11-04'
@@ -45,7 +45,7 @@ def import_csv_gps(filepath):
     
         if row["timestamp"] and row["date"]:
             #start_timestamp = str(correct_gp_start_time(row['timestamp']))
-            start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
+            start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"], filenum)
             break
 
     if start_time == 0:
@@ -65,7 +65,7 @@ def import_csv_gps(filepath):
         org_timestamp = row["timestamp"]
         if line_count < 1:
             init_time = csv_timestamp_to_timedelta(row["timestamp"])
-            first_timestamp = correct_init_time(init_time)
+            first_timestamp = correct_init_time(init_time, filenum)
             timestamp = start_time + first_timestamp
         else:
             timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp)
