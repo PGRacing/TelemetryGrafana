@@ -53,7 +53,7 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     micros = int(gps_timestamp[7:])
     gps_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=micros)
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
-    delta = timedelta.total_seconds() * 0.948
+    delta = timedelta.total_seconds() * 0.9496
     dtdelta = datetime.timedelta(seconds=delta)
     return gps_datetime - dtdelta
 
@@ -92,12 +92,12 @@ def correct_csv_timestamp_millis(previous_csv_timestamp, current_csv_timestamp, 
     return previous_timestamp + delta
 
 def correct_init_time(init_time):
-    seconds = init_time.total_seconds() * 0.948
+    seconds = init_time.total_seconds() * 0.9496
     corrected_start_time = datetime.timedelta(seconds=seconds)
     return corrected_start_time
 
 def correct_init_time_millis(init_time):
-    init_time *= 0.948
+    init_time *= 0.9496
     corrected_start_time = datetime.timedelta(milliseconds=init_time)
     return corrected_start_time
 
@@ -114,7 +114,7 @@ def set_new_coefficient(previous_utc, current_utc, previous_timestamp, current_t
     utc_delta = (gps_utc_to_timedelta(current_utc) - gps_utc_to_timedelta(previous_utc)).total_seconds()
     coefficient = utc_delta/total_seconds
     if coefficient == 0.:
-        coefficient = 0.948
+        coefficient = 0.9496
     return coefficient
 
 GPS = [

@@ -77,14 +77,17 @@ def import_csv_damp(filepath, start_time, time_coefficients):
             first_timestamp = correct_init_time(init_time)
             timestamp = start_time + first_timestamp
         else:
-            for i in range (1, len(time_coefficients)):
-                if csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[i-1][0]) and \
-                csv_timestamp_to_timedelta(row["timestamp"]) < csv_timestamp_to_timedelta(time_coefficients[i][0]):
-                    time_coefficient = time_coefficients[i-1][1]
-                elif csv_timestamp_to_timedelta(row["timestamp"]) <= csv_timestamp_to_timedelta(time_coefficients[0][0]):
-                    time_coefficient = time_coefficients[0][1]
-                elif csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[len(time_coefficients) - 1][0]):
-                    time_coefficient = time_coefficients[len(time_coefficients) - 1][1]
+            if len(time_coefficients) == 1:
+                time_coefficient = 0.9489
+            else:
+                for i in range (1, len(time_coefficients)):
+                    if csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[i-1][0]) and \
+                    csv_timestamp_to_timedelta(row["timestamp"]) < csv_timestamp_to_timedelta(time_coefficients[i][0]):
+                        time_coefficient = time_coefficients[i-1][1]
+                    elif csv_timestamp_to_timedelta(row["timestamp"]) <= csv_timestamp_to_timedelta(time_coefficients[0][0]):
+                        time_coefficient = time_coefficients[0][1]
+                    elif csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[len(time_coefficients) - 1][0]):
+                        time_coefficient = time_coefficients[len(time_coefficients) - 1][1]
 
             timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp, time_coefficient)
 

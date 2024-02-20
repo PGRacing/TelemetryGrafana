@@ -19,6 +19,10 @@ imported_files = 0
 #f_gyro = list(range(3))
 use_processes = True
 
+# UWAGA !!!
+# Z POPRAWKAMI DOTYCZĄCYMI TIMESTAMPOW KOD SIĘ MIELI JAKIŚ 40 MINUT
+
+
 def import_influxdb(filepath):
     processes = []
     start = datetime.datetime.now()

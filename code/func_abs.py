@@ -26,15 +26,17 @@ def import_csv_abs(filepath, start_time, time_coefficients):
             first_timestamp_millis = correct_init_time_millis(int(row["timestamp"]))
             timestamp = start_time + first_timestamp_millis
         else:
-            for i in range (1, len(time_coefficients)):
-                if csv_millis_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[i-1][0]) and \
-                csv_millis_timestamp_to_timedelta(row["timestamp"]) < csv_timestamp_to_timedelta(time_coefficients[i][0]):
-                    time_coefficient = time_coefficients[i-1][1]
-                elif csv_millis_timestamp_to_timedelta(row["timestamp"]) <= csv_timestamp_to_timedelta(time_coefficients[0][0]):
-                    time_coefficient = time_coefficients[0][1]
-                elif csv_millis_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[len(time_coefficients) - 1][0]):
-                    time_coefficient = time_coefficients[len(time_coefficients) - 1][1]
-                    
+            if len(time_coefficients) == 1:
+                time_coefficient = 0.9489
+            else:
+                for i in range (1, len(time_coefficients)):
+                    if csv_millis_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[i-1][0]) and \
+                    csv_millis_timestamp_to_timedelta(row["timestamp"]) < csv_timestamp_to_timedelta(time_coefficients[i][0]):
+                        time_coefficient = time_coefficients[i-1][1]
+                    elif csv_millis_timestamp_to_timedelta(row["timestamp"]) <= csv_timestamp_to_timedelta(time_coefficients[0][0]):
+                        time_coefficient = time_coefficients[0][1]
+                    elif csv_millis_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[len(time_coefficients) - 1][0]):
+                        time_coefficient = time_coefficients[len(time_coefficients) - 1][1]
 
             csv_timestamp = csv_millis_timestamp_to_timedelta(row["timestamp"])
             timestamp = correct_csv_timestamp_millis(previous_csv_timestamp, csv_timestamp, previous_timestamp, time_coefficient)

@@ -36,7 +36,7 @@ def import_csv_gps(filepath):
     line_count = 0
     start_time = 0
     points = []
-    coefficients = [['00:00:00:000', 0.948]]
+    coefficients = [['00:00:00:000', 0.9489]]
     new_row = ''
     startTime = datetime.datetime.now()
     previous_timestamp = None
@@ -71,10 +71,10 @@ def import_csv_gps(filepath):
             timestamp = start_time + first_timestamp
             prev_timestamp = row['timestamp']
             prev_utc = row['utc']
-            coefficient = 0.948
+            coefficient = 0.9496
             #coefficients.append([row['timestamp'], coefficient])
         else:
-            if line_count % 1000 == 0:
+            if line_count % 300 == 0:
                 coefficient = set_new_coefficient(prev_utc, row['utc'], prev_timestamp, row['timestamp'])
                 prev_timestamp = row['timestamp']
                 prev_utc = row['utc']
