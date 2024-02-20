@@ -27,7 +27,7 @@ def nmea_checksum(sentence: str):
     except ValueError as e:
        return False
 
-def import_csv_gps(filepath, filenum):
+def import_csv_gps(filepath):
     # CSV column names as following:
     # timestamp,LOG,utc,pos status,lat,lat dir,lon,lon dir,speed,track,date,mag var,var dir,mode ind,chs,ter
     # date like '2023-11-04'
@@ -36,6 +36,7 @@ def import_csv_gps(filepath, filenum):
     line_count = 0
     start_time = 0
     points = []
+    coefficients = [['00:00:00:000', 0.95]]
     new_row = ''
     startTime = datetime.datetime.now()
     previous_timestamp = None
@@ -45,7 +46,7 @@ def import_csv_gps(filepath, filenum):
     
         if row["timestamp"] and row["date"]:
             #start_timestamp = str(correct_gp_start_time(row['timestamp']))
-            start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"], filenum)
+            start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
             break
 
     if start_time == 0:
@@ -63,14 +64,24 @@ def import_csv_gps(filepath, filenum):
             continue
     
         org_timestamp = row["timestamp"]
+        
         if line_count < 1:
             init_time = csv_timestamp_to_timedelta(row["timestamp"])
-            first_timestamp = correct_init_time(init_time, filenum)
+            first_timestamp = correct_init_time(init_time)
             timestamp = start_time + first_timestamp
+            prev_timestamp = row['timestamp']
+            prev_utc = row['utc']
+            coefficient = 0.95
         else:
-            timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp)
+            if line_count % 5000 == 0:
+                coefficient = set_new_coefficient(prev_utc, row['utc'], prev_timestamp, row['timestamp'])
+                prev_timestamp = row['timestamp']
+                prev_utc = row['utc']
+                coefficients.append([row['timestamp'], coefficient])
+            timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp, coefficient)
         previous_timestamp = timestamp
         previous_csv_timestamp = org_timestamp
+
         # transformation x1 = int(x/100) + ((x%100)/60)
         lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
         lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)
@@ -109,7 +120,7 @@ def import_csv_gps(filepath, filenum):
 
     file.close()
 
-    return start_time
+    return start_time, coefficients
 
 def convert_csv_gps(filepath):
   # convert csv data to csv in standard for eg. gpsvisualizer.com

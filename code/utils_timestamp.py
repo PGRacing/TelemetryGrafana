@@ -1,7 +1,7 @@
 import datetime
 
 
-#COEFFICIENT = 0.9473
+COEFFICIENT = 0.9473
 
 # csv timestamp like '00:00:08:214'
 # gps timestamp like '081149.88'
@@ -43,7 +43,7 @@ def gps_utc_to_timedelta(time):
     millis = int(time[7:])
     return datetime.timedelta(hours=hour, minutes=minute, seconds=second, milliseconds=millis)
 
-def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp, file_num):
+def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     day = int(csv_date[:2])
     month = int(csv_date[2:4])
     year = 2000 + int(csv_date[4:])
@@ -53,7 +53,7 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp, file_num
     micros = int(gps_timestamp[7:])
     gps_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=micros)
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
-    delta = timedelta.total_seconds() * GPS[file_num-1][1]
+    delta = timedelta.total_seconds() * 0.95
     dtdelta = datetime.timedelta(seconds=delta)
     return gps_datetime - dtdelta
 
@@ -65,35 +65,39 @@ def start_time_add_millis_timestamp(start_time, csv_millis_timestamp):
     timedelta = csv_millis_timestamp_to_timedelta(csv_millis_timestamp)
     return start_time + timedelta
 
-def correct_csv_timestamp(previous_csv_timestamp, current_csv_timestamp, previous_timestamp):
+def correct_csv_timestamp(previous_csv_timestamp, current_csv_timestamp, previous_timestamp, coefficient):
     # STRINGS: previous_csv_timestamp, current_csv_timestamp
     # DATETIME: previous_timestamp
     prev_timedelta = csv_timestamp_to_timedelta(previous_csv_timestamp)
     curr_timedelta = csv_timestamp_to_timedelta(current_csv_timestamp)
     timestamp_delta_csv = curr_timedelta - prev_timedelta
     total_seconds = timestamp_delta_csv.total_seconds()
-    total_seconds *= COEFFICIENT
+    total_seconds *= coefficient
     timedelta = datetime.timedelta(seconds=total_seconds)
     return previous_timestamp + timedelta
 
 
-def correct_csv_timestamp_millis(previous_csv_timestamp, current_csv_timestamp, previous_timestamp):
+def correct_csv_timestamp_millis(previous_csv_timestamp, current_csv_timestamp, previous_timestamp, time_coefficient):
     # STRING: previous_csv_timestamp
     # DATETIME: previous_timestamp, current_csv_timestamp
     previous_csv_timestamp = csv_millis_timestamp_to_timedelta(previous_csv_timestamp)
     timestamp_delta_csv = current_csv_timestamp - previous_csv_timestamp
     total_seconds = timestamp_delta_csv.total_seconds()
-    total_seconds *= COEFFICIENT
+    print(total_seconds)
+    print(type(total_seconds))
+    print(time_coefficient)
+    print(type(time_coefficient))
+    total_seconds *= time_coefficient
     delta = datetime.timedelta(seconds=total_seconds)
     return previous_timestamp + delta
 
-def correct_init_time(init_time, file_num):
-    seconds = init_time.total_seconds() * GPS[file_num-1][1]
+def correct_init_time(init_time):
+    seconds = init_time.total_seconds() * 0.95
     corrected_start_time = datetime.timedelta(seconds=seconds)
     return corrected_start_time
 
 def correct_init_time_millis(init_time):
-    init_time *= COEFFICIENT
+    init_time *= 0.95
     corrected_start_time = datetime.timedelta(milliseconds=init_time)
     return corrected_start_time
 
@@ -101,6 +105,17 @@ def correct_gp_start_time(time):
     time2 = csv_timestamp_to_timedelta(time)
     start_time = correct_init_time(time2)
     return start_time
+
+def set_new_coefficient(previous_utc, current_utc, previous_timestamp, current_timestamp):
+    prev_timedelta = csv_timestamp_to_timedelta(previous_timestamp)
+    curr_timedelta = csv_timestamp_to_timedelta(current_timestamp)
+    timestamp_delta_csv = curr_timedelta - prev_timedelta
+    total_seconds = timestamp_delta_csv.total_seconds()
+    utc_delta = (gps_utc_to_timedelta(current_utc) - gps_utc_to_timedelta(previous_utc)).total_seconds()
+    coefficient = utc_delta/total_seconds
+    if coefficient == 0.:
+        coefficient = 0.95
+    return coefficient
 
 GPS = [
     [1, 0.95],
@@ -114,24 +129,24 @@ GPS = [
     [9, 0.9426679548507199],
     [10, 0.95],
     [11, 0.95],
-    [12, 0.9379672377024209],
-    [13, 0.9447273229961063],
-    [14, 0.9436726029012854],
-    [15, 0.9436566560629751],
-    [16, 0.9425227813228472],
-    [17, 0.950393772064814],
-    [18, 0.9488614800759013],
-    [19, 0.9477150505792329],
+    [12, 0.9473],
+    [13, 0.946],
+    [14, 0.95], # short 
+    [15, 0.95], # short
+    [16, 0.95], # short
+    [17, 0.9618],
+    [18, 0.9588614800759013],
+    [19, 0.9577150505792329],
     [20, 0.95],
     [21, 0.95],
-    [22, 0.946392240359593],
-    [23, 0.9474681445691818],
+    [22, 0.956392240359593],
+    [23, 0.9574681445691818],
     [24, 0.95],
     [25, 0.95],
     [26, 0.95],
-    [27, 0.9448502453607084],
+    [27, 0.9548502453607084],
     [28, 0.95],
     [29, 0.95],
     [30, 0.95],
-    [31, 0.9429752568545199],
+    [31, 0.9529752568545199],
     [32, 0.95],]

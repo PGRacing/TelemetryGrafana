@@ -42,13 +42,13 @@ def import_file(filepath, file_num):
     #global f_gyro
     # print(f'i = {file_num}')
     try:
-        start_time = import_csv_gps(filepath + 'GPS0101-' + str(file_num) + '.csv', file_num)
+        start_time, time_coefficients = import_csv_gps(filepath + 'GPS0101-' + str(file_num) + '.csv')
         #(start_time, f_gyro) = all_gps_problems
         if start_time == 0:
             print('Start time not set! Skip this iteration.')
             return
-        import_csv_abs(filepath + 'ABS0101-' + str(file_num) + '.csv', start_time, file_num)
-        import_csv_damp(filepath + 'DAMP0101-' + str(file_num) + '.csv', start_time, file_num)
+        import_csv_abs(filepath + 'ABS0101-' + str(file_num) + '.csv', start_time, time_coefficients)
+        import_csv_damp(filepath + 'DAMP0101-' + str(file_num) + '.csv', start_time, time_coefficients)
         #imu_data = import_csv_imu(filepath + 'IMU0101-' + str(file_num) + '.csv', start_time, f_acc, f_gyro)
         #(f_acc, f_gyro) = imu_data
         imported_files += 1
