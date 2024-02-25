@@ -57,6 +57,19 @@ def gps_timestamp_sub_timestamp(csv_date, gps_timestamp, csv_timestamp):
     dtdelta = datetime.timedelta(seconds=delta)
     return gps_datetime - dtdelta
 
+def cooling_system_timestamp(timestamp):
+    year = int(timestamp[:2])
+    month = int(timestamp[4:6])
+    day = int(timestamp[9:10])
+    hour = int(timestamp[11:13])
+    minute = int(timestamp[14:16])
+    second = int(timestamp[17:19])
+    milis = int(timestamp[20:])
+    time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=milis)
+
+    return time
+
+
 def start_time_add_timestamp(start_time, csv_timestamp):
     timedelta = csv_timestamp_to_timedelta(csv_timestamp)
     return start_time + timedelta
