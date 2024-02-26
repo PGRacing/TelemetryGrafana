@@ -7,7 +7,7 @@ path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24_02_25_p
 
 file_counter = 0
 
-def find_racebox(filepath):
+def find_file(filepath):
     global file_counter
 
     #startProgram = datetime.datetime.now()
@@ -19,16 +19,27 @@ def find_racebox(filepath):
 
 
 def open_file(filefullpath):
+    points = []
     with open(filefullpath, 'r') as file:
 
         data = csv.DictReader(file)
-        points = []
+        
         #startTime = datetime.now()
         row_counter = 0
 
         for row in data:
             #print(datetime.datetime.fromtimestamp(float(row['timestamp'])))
-            timestamp = cooling_system_timestamp(str(datetime.datetime.fromtimestamp(float(row['timestamp']))))
+            try:
+                timestamp = cooling_system_timestamp(str(datetime.datetime.fromtimestamp(float(row['timestamp']))))
+                float(row['engine_out'])
+                float(row['engine_in'])
+                float(row['radiator_l_in'])
+                float(row['radiator_l_out'])
+                float(row['radiator_r_in'])
+                float(row['radiator_r_out'])
+            except (ValueError, TypeError) as e:
+                #print(e)
+                continue
 
             point = (
                 Point('temp')
@@ -73,7 +84,7 @@ def open_file(filefullpath):
             )
             points.append(point)
 
-            if row_counter % 700 == 0:
+            if row_counter % 100 == 0:
                 write_api.write(bucket=bucket, org=org, record=points)
                 points.clear()
             row_counter += 1
@@ -82,4 +93,4 @@ def open_file(filefullpath):
         #endTime = datetime.datetime.now()
         print(f'Calculated file number {file_counter} in')
 
-find_racebox(path)
+find_file(path)
