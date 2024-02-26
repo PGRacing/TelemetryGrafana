@@ -29,7 +29,7 @@ def open_file(filefullpath):
     for row in csv_reader:
         #print(datetime.datetime.fromtimestamp(float(row['timestamp'])))
         try:
-            timestamp = cooling_system_timestamp(str(datetime.datetime.fromtimestamp(float(row['timestamp']))))
+            timestamp = datetime.datetime.fromtimestamp(float(row['timestamp'])) - datetime.timedelta(hours=1)
             float(row['engine_out'])
             float(row['engine_in'])
             float(row['radiator_l_in'])
@@ -39,6 +39,10 @@ def open_file(filefullpath):
         except (ValueError, TypeError) as e:
             #print(e)
             continue
+
+        engine_delta = float(row['engine_out']) - float(row['engine_in'])
+        left_radiator_detla = float(row['radiator_l_out']) - float(row['radiator_l_in'])
+        right_radiator_delta = float(row['radiator_r_out']) - float(row['radiator_r_in'])
 
         point = (
             Point('temp')
@@ -51,6 +55,13 @@ def open_file(filefullpath):
             Point('temp')
             .tag("temperature", 'engine')
             .field("in", float(row['engine_in']))
+            .time(timestamp)
+        )
+        points.append(point)
+        point = (
+            Point('temp')
+            .tag("temperature", 'engine')
+            .field("delta", engine_delta)
             .time(timestamp)
         )
         points.append(point)
@@ -70,6 +81,13 @@ def open_file(filefullpath):
         points.append(point)
         point = (
             Point('temp')
+            .tag("temperature", 'radiator_l')
+            .field("delta", left_radiator_detla)
+            .time(timestamp)
+        )
+        points.append(point)
+        point = (
+            Point('temp')
             .tag("temperature", 'radiator_r')
             .field("in", float(row['radiator_r_in']))
             .time(timestamp)
@@ -82,8 +100,15 @@ def open_file(filefullpath):
             .time(timestamp)
         )
         points.append(point)
+        point = (
+            Point('temp')
+            .tag("temperature", 'radiator_r')
+            .field("delta", right_radiator_delta)
+            .time(timestamp)
+        )
+        points.append(point)
 
-        if row_counter % 100 == 0:
+        if row_counter % 200 == 0:
             write_api.write(bucket=bucket, org=org, record=points)
             points.clear()
         row_counter += 1

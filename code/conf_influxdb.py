@@ -6,7 +6,7 @@ token = "LEIPXlfTBFWQ6HAcdyky81_eWDDPMNHvSTOU7E4FSbFOaaPCgCkgGGNIq6drweTuV8uv-sJ
 org = "PGRacingTeam"
 url = "http://185.237.15.60:8086/"
 #bucket="telemetry-2023-11-05-Racebox"
-bucket="telemetry-2024-02-15"
+bucket="telemetry-2024-02-25"
 
 write_client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
 write_api = write_client.write_api(write_options=SYNCHRONOUS)
