@@ -13,6 +13,8 @@ def find_file(filepath):
     #startProgram = datetime.datetime.now()
     for i in range (1, 83):
         file_counter += 1
+        if file_counter == 71 or file_counter == 72 or file_counter == 74:
+            continue
         open_file(filepath + 'cooling_system_temp_' + str(i) + '.csv')
     #endProgram = datetime.now()
     print(f'Successfully imported {file_counter} files !')
