@@ -22,6 +22,7 @@ best_time = 0.
 var_gyro = 0.
 var_acc = 0.
 
+special_lap_acc = []
 
 # to be set every track change
 approx_lon = 18.712
@@ -40,7 +41,7 @@ def find_racebox(filepath):
     global var_gps
 
     startProgram = datetime.now()
-    for i in range (1, 16):
+    for i in range (1, 14):
         file_counter += 1
         open_file(filepath + 'RB-' + str(i) + '.csv')
     endProgram = datetime.now()
@@ -53,6 +54,8 @@ def open_file(filefullpath):
     global best_lap_number
     global best_time
     global last_time
+    global special_lap_acc
+    
     with open(filefullpath, 'r') as file:
         csvreader_object = csv.reader(file)
         for i in range (1, 13):
@@ -63,7 +66,8 @@ def open_file(filefullpath):
         points = []
         startTime = datetime.now()
         row_counter = 0
-           
+        inner_lap_counter = 0
+        
 
         f_gps = list(range(3))
         f_acc = list(range(3))
@@ -96,21 +100,25 @@ def open_file(filefullpath):
 
             timestamp = row['Time']
 
-      #vel_x = f_gps[0].x[1][0] * conv_rate_lon
-      #vel_y = f_gps[1].x[1][0] * conv_rate_lat
+    #vel_x = f_gps[0].x[1][0] * conv_rate_lon
+    #vel_y = f_gps[1].x[1][0] * conv_rate_lat
 
             f_gps = kalman_gps(f_gps, float(row['Latitude']), float(row['Longitude']), row_counter)
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter)
             f_gyro, yaw = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, yaw)
             
             if row_counter == 0:
-               lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
+                lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
             else:
-               last_time, lap_diff, inner_lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
-               lap_counter += lap_diff
-               if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
+                last_time, lap_diff, inner_lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
+                lap_counter += lap_diff
+            if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
                     best_time = last_time
                     best_lap_number = lap_counter
+
+            #if lap_counter == 53:
+            #    time = row['Time'][17:23]
+            #    special_lap_acc.append([float(time), float(f_acc[0].x[0]), float(f_acc[1].x[0]), float(f_acc[2].x[0]), float(row['Speed'])])
 
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
@@ -330,6 +338,10 @@ def open_file(filefullpath):
 
         write_api.write(bucket=bucket, org=org, record=points)
         endTime = datetime.now()
+        with open('lap_53_no_steering_wheel.csv', 'w') as savu_file:
+            writer = csv.writer(savu_file)
+            writer.writerow(['seconds', 'acc_x', 'acc_y', 'acc_z', 'speed'])
+            writer.writerows(special_lap_acc)
         print(f'Calculated file number {file_counter} in {endTime - startTime}')
 
 

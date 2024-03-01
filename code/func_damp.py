@@ -66,6 +66,7 @@ def import_csv_damp(filepath, start_time, time_coefficients):
     csv_reader = csv.DictReader(file)
     line_count = 0
     points = []
+    #data_to_export = []
     startTime = datetime.datetime.now()
     previous_timestamp = None
     previous_csv_timestamp = None
@@ -94,6 +95,14 @@ def import_csv_damp(filepath, start_time, time_coefficients):
         if line_count == 0:
             setup_kalman_filter()
         data = filter_data(calc_wheel_position(row), row["ID"])
+        minutes_total = datetime.datetime(year=2023, month=11, day=5, hour=9, minute=54)
+
+        #if timestamp > start_of_lap:
+        #    if row['ID'] == '6':
+        #        time_s = timestamp - minutes_total
+        #        time = time_s.total_seconds()
+        #        data_to_export.append([time, data[0]])
+
         previous_timestamp = timestamp
         previous_csv_timestamp = row["timestamp"]
         point = (
@@ -130,6 +139,11 @@ def import_csv_damp(filepath, start_time, time_coefficients):
     endTime = datetime.datetime.now()
     file.close()
     print(f'DAMP: Imported {line_count} rows in {endTime - startTime}')
+    #file = open('items.txt','w')
+    #for i in range (0, len(data_to_export)):
+    #    file.write(str(data_to_export[i][0]) + ' ' + str(data_to_export[i][1]) + ' ')
+    #file.close()
+    #return data_to_export
 
 
 def setup_kalman_filter():
