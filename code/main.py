@@ -8,13 +8,13 @@ import datetime
 
 # TODO IMPORTANT try-except/validate lines import better than aborting whole file import
 
-paths = ['C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23_11_05_Pszczolki/',
+paths = ['C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24_03_01_proto/',
          'C:/Users/krzys/Desktop/telemetry/05.11-Pszczolki/',
          "C:/Users/cepek/Politechnika Gdańska/PGRacing Team - Dokumenty/PGRACING TEAM - PROJEKT/Resources/TESTING/05.11.2023 - Pszczółki/Raw data/05.11-Pszczolki/"
          ]
 
 imported_files = 0
-#f_gps = list(range(2))
+f_gps = list(range(2))
 #f_acc = list(range(3))
 #f_gyro = list(range(3))
 use_processes = True
@@ -27,7 +27,7 @@ def import_influxdb(filepath):
     processes = []
     start = datetime.datetime.now()
 
-    for i in range(1, 34):
+    for i in range(1, 5):
         if use_processes:
             processes.append(multiprocessing.Process(target=import_file, args=(filepath, i,)))
             processes[-1].start()
@@ -41,23 +41,24 @@ def import_influxdb(filepath):
 
 def import_file(filepath, file_num):
     global imported_files
-    #global f_gps
+    global f_gps
     #global f_acc
     #global f_gyro
     # print(f'i = {file_num}')
     try:
-        start_time, time_coefficients = import_csv_gps(filepath + 'GPS0101-' + str(file_num) + '.csv')
+        start_time, f_gps = import_csv_gps(filepath + 'GPS0101-' + str(file_num) + '.csv', f_gps)
         #(start_time, f_gyro) = all_gps_problems
         if start_time == 0:
             print('Start time not set! Skip this iteration.')
             return
-        import_csv_abs(filepath + 'ABS0101-' + str(file_num) + '.csv', start_time, time_coefficients)
-        import_csv_damp(filepath + 'DAMP0101-' + str(file_num) + '.csv', start_time, time_coefficients)
+        print(start_time)
+        import_csv_abs(filepath + 'ABS0101-' + str(file_num) + '.csv', start_time)
+        import_csv_damp(filepath + 'DAMP0101-' + str(file_num) + '.csv', start_time)
         #imu_data = import_csv_imu(filepath + 'IMU0101-' + str(file_num) + '.csv', start_time, f_acc, f_gyro)
         #(f_acc, f_gyro) = imu_data
         imported_files += 1
     except ValueError as e:
-        #print(e)
+        print(e)
         print(f'Unxepected error while trying to import {filepath.split("/")[-1]}, continue...')
 
 

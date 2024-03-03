@@ -338,10 +338,10 @@ def open_file(filefullpath):
 
         write_api.write(bucket=bucket, org=org, record=points)
         endTime = datetime.now()
-        with open('lap_53_no_steering_wheel.csv', 'w') as savu_file:
-            writer = csv.writer(savu_file)
-            writer.writerow(['seconds', 'acc_x', 'acc_y', 'acc_z', 'speed'])
-            writer.writerows(special_lap_acc)
+        #with open('lap_53_no_steering_wheel.csv', 'w') as savu_file:
+            #writer = csv.writer(savu_file)
+            #writer.writerow(['seconds', 'acc_x', 'acc_y', 'acc_z', 'speed'])
+            #writer.writerows(special_lap_acc)
         print(f'Calculated file number {file_counter} in {endTime - startTime}')
 
 

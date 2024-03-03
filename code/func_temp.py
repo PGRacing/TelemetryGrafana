@@ -1,23 +1,25 @@
-import datetime
 import csv
+import os
+from datetime import datetime
 from conf_influxdb import *
 from utils_timestamp import *
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24_02_25_proto/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24_03_01_proto/cooling_system/'
 
 file_counter = 0
 
-def find_file(filepath):
+def find_file(path):
     global file_counter
 
-    #startProgram = datetime.datetime.now()
-    for i in range (1, 83):
-        file_counter += 1
-        if file_counter == 71 or file_counter == 72 or file_counter == 74:
-            continue
-        open_file(filepath + 'cooling_system_temp_' + str(i) + '.csv')
-    #endProgram = datetime.now()
-    print(f'Successfully imported {file_counter} files !')
+    startProgram = datetime.datetime.now()
+    for item in os.listdir(path):
+        full_path = os.path.join(path, item)
+
+        if os.path.isfile(full_path) and item.endswith('.csv'):
+            file_counter += 1
+            open_file(full_path)
+    endProgram = datetime.datetime.now()
+    print(f'Successfully imported {file_counter} files in {endProgram-startProgram}!')
 
 
 def open_file(filefullpath):
@@ -25,7 +27,7 @@ def open_file(filefullpath):
     csv_reader = csv.DictReader(file)
     points = []
         
-    #startTime = datetime.now()
+    startTime = datetime.datetime.now()
     row_counter = 0
 
     for row in csv_reader:
@@ -116,7 +118,7 @@ def open_file(filefullpath):
         row_counter += 1
 
     write_api.write(bucket=bucket, org=org, record=points)
-    #endTime = datetime.datetime.now()
-    print(f'Calculated file number {file_counter} in')
+    endTime = datetime.datetime.now()
+    print(f'Calculated file number {file_counter} in {endTime-startTime}')
 
 find_file(path)

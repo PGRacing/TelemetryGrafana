@@ -4,6 +4,13 @@ from datetime import datetime
 from functools import reduce
 from conf_influxdb import *
 from utils_timestamp import *
+from kalman_filters import *
+from lap_timer import *
+
+lap_counter = 0
+last_time = 0.
+best_lap_number = 0
+best_time = 0.
 
 def byte_xor_row(row):
   row_list = list(row.values())
@@ -27,7 +34,11 @@ def nmea_checksum(sentence: str):
     except ValueError as e:
        return False
 
-def import_csv_gps(filepath):
+def import_csv_gps(filepath, f_gps):
+    global lap_counter
+    global best_lap_number
+    global best_time
+    global last_time
     # CSV column names as following:
     # timestamp,LOG,utc,pos status,lat,lat dir,lon,lon dir,speed,track,date,mag var,var dir,mode ind,chs,ter
     # date like '2023-11-04'
@@ -36,21 +47,28 @@ def import_csv_gps(filepath):
     line_count = 0
     start_time = 0
     points = []
-    coefficients = [['00:00:00:000', 0.9489]]
+    #coefficients = [['00:00:00:000', 0.9489]]
     new_row = ''
-    startTime = datetime.datetime.now()
+    startTime = datetime.now()
+    lap_timer = LapTimer()
     previous_timestamp = None
     previous_csv_timestamp = None
 
     for row in csv_reader:
-    
-        if row["timestamp"] and row["date"]:
+        date = True
+        if row['date']:
+            try:
+                float(row["date"])
+            except ValueError:
+                date = False
+
+        if row["timestamp"] and date and row["date"]:
             #start_timestamp = str(correct_gp_start_time(row['timestamp']))
             start_time = gps_timestamp_sub_timestamp(row["date"], row["utc"], row["timestamp"])
             break
 
     if start_time == 0:
-        return 0, coefficients
+        return 0, f_gps#, coefficients
   #print(start_time)
 
     for row in csv_reader:
@@ -64,49 +82,92 @@ def import_csv_gps(filepath):
             continue
     
         org_timestamp = row["timestamp"]
+        timestamp = start_time_add_timestamp(start_time, org_timestamp)
         
-        if line_count < 1:
-            init_time = csv_timestamp_to_timedelta(row["timestamp"])
-            first_timestamp = correct_init_time(init_time)
-            timestamp = start_time + first_timestamp
-            prev_timestamp = row['timestamp']
-            prev_utc = row['utc']
-            coefficient = 0.9496
+        #if line_count < 1:
+            #init_time = csv_timestamp_to_timedelta(row["timestamp"])
+            #first_timestamp = correct_init_time(init_time)
+            #timestamp = start_time + first_timestamp
+            #prev_timestamp = row['timestamp']
+            #prev_utc = row['utc']
+            #coefficient = 0.9496
             #coefficients.append([row['timestamp'], coefficient])
-        else:
-            if line_count % 300 == 0:
-                coefficient = set_new_coefficient(prev_utc, row['utc'], prev_timestamp, row['timestamp'])
-                prev_timestamp = row['timestamp']
-                prev_utc = row['utc']
-                coefficients.append([row['timestamp'], coefficient])
-            timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp, coefficient)
-        previous_timestamp = timestamp
-        previous_csv_timestamp = org_timestamp
+        #else:
+            #if line_count % 300 == 0:
+                #coefficient = set_new_coefficient(prev_utc, row['utc'], prev_timestamp, row['timestamp'])
+                #prev_timestamp = row['timestamp']
+                #prev_utc = row['utc']
+                #coefficients.append([row['timestamp'], coefficient])
+            #timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp, coefficient)
+        #previous_timestamp = timestamp
+        #previous_csv_timestamp = org_timestamp
+
+
 
         # transformation x1 = int(x/100) + ((x%100)/60)
         lat = (float(row["lat"]) / 100 // 1) + (float(row["lat"]) % 100.0 / 60.0)
         lon = (float(row["lon"]) / 100 // 1) + (float(row["lon"]) % 100.0 / 60.0)
 
-        #f_gps = kalman_gps(f_gps, lat, lon, line_count)
+        f_gps = kalman_gps(f_gps, lat, lon, line_count)
+
+        if line_count == 0:
+            lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
+        else:
+            last_time, lap_diff, inner_lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
+            lap_counter += lap_diff
+        if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
+                best_time = last_time
+                best_lap_number = lap_counter
 
         point = (
             Point('gps')
             .tag("ID", "gps_position")
-            .field("latitude", lat)
+            .field("latitude", f_gps[0].x[0])
             .time(timestamp)
         )
-        #points.append(point)
+        points.append(point)
         point = (
             Point('gps')
             .tag("ID", "gps_position")
-            .field("longitude", lon)
+            .field("longitude", f_gps[1].x[0])
             .time(timestamp)
         )
-        #points.append(point)
+        points.append(point)
         point = (
             Point('gps')
             .tag("ID", "gps_position")
             .field("speed", float(row["speed"]) * 1.852)
+            .time(timestamp)
+        )
+        points.append(point)
+        point = (
+            Point('lap_times')
+            .tag("lap_time", 'last')
+            .field("last_time", last_time)
+            .time(timestamp)
+        )
+        points.append(point)
+
+        point = (
+            Point('lap_times')
+            .tag('lap_time', 'best')
+            .field('best_time', best_time)
+            .time(timestamp)
+        )
+        points.append(point)
+
+        point = (
+            Point('lap_times')
+            .tag('lap_time', 'best_lap_number')
+            .field('best_lap_number', best_lap_number)
+            .time(timestamp)
+        )
+        points.append(point)
+
+        point = (
+            Point('lap_times')
+            .tag('lap_time', 'lap_number')
+            .field('lap_counter', lap_counter)
             .time(timestamp)
         )
         points.append(point)
@@ -116,12 +177,12 @@ def import_csv_gps(filepath):
         line_count += 1
 
     write_api.write(bucket=bucket, org=org, record=points)
-    endTime = datetime.datetime.now()
+    endTime = datetime.now()
     print(f'GPS: Imported {line_count} rows in {endTime - startTime}')
 
     file.close()
 
-    return start_time, coefficients
+    return start_time, f_gps
 
 def convert_csv_gps(filepath):
   # convert csv data to csv in standard for eg. gpsvisualizer.com

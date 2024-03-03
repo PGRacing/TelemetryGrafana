@@ -58,7 +58,7 @@ f = list(KalmanFilter(dim_x=2, dim_z=1) for i in range(5))
 # 6  SW skret w prawo - spadek R
 
 
-def import_csv_damp(filepath, start_time, time_coefficients):
+def import_csv_damp(filepath, start_time):
     # CSV column names as following:
     # timestamp,ID,delta
     # date like '2023-11-04'
@@ -73,29 +73,32 @@ def import_csv_damp(filepath, start_time, time_coefficients):
 
     for row in csv_reader:
         # print(f'{row["timestamp"]}; {row["ID"]}; {row["delta"]}')
-        if line_count < 1:
-            init_time = csv_timestamp_to_timedelta(row["timestamp"])
-            first_timestamp = correct_init_time(init_time)
-            timestamp = start_time + first_timestamp
-        else:
-            if len(time_coefficients) == 1:
-                time_coefficient = 0.9489
-            else:
-                for i in range (1, len(time_coefficients)):
-                    if csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[i-1][0]) and \
-                    csv_timestamp_to_timedelta(row["timestamp"]) < csv_timestamp_to_timedelta(time_coefficients[i][0]):
-                        time_coefficient = time_coefficients[i-1][1]
-                    elif csv_timestamp_to_timedelta(row["timestamp"]) <= csv_timestamp_to_timedelta(time_coefficients[0][0]):
-                        time_coefficient = time_coefficients[0][1]
-                    elif csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[len(time_coefficients) - 1][0]):
-                        time_coefficient = time_coefficients[len(time_coefficients) - 1][1]
 
-            timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp, time_coefficient)
+        timestamp = start_time_add_timestamp(start_time, row["timestamp"])
+
+        #if line_count < 1:
+            #init_time = csv_timestamp_to_timedelta(row["timestamp"])
+            #first_timestamp = correct_init_time(init_time)
+            #timestamp = start_time + first_timestamp
+        #else:
+            #if len(time_coefficients) == 1:
+                #time_coefficient = 0.9489
+            #else:
+                #for i in range (1, len(time_coefficients)):
+                    #if csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[i-1][0]) and \
+                    #csv_timestamp_to_timedelta(row["timestamp"]) < csv_timestamp_to_timedelta(time_coefficients[i][0]):
+                        #time_coefficient = time_coefficients[i-1][1]
+                    #elif csv_timestamp_to_timedelta(row["timestamp"]) <= csv_timestamp_to_timedelta(time_coefficients[0][0]):
+                        #time_coefficient = time_coefficients[0][1]
+                    #elif csv_timestamp_to_timedelta(row["timestamp"]) >= csv_timestamp_to_timedelta(time_coefficients[len(time_coefficients) - 1][0]):
+                        #time_coefficient = time_coefficients[len(time_coefficients) - 1][1]
+
+            #timestamp = correct_csv_timestamp(previous_csv_timestamp, row["timestamp"], previous_timestamp, time_coefficient)
 
         if line_count == 0:
             setup_kalman_filter()
         data = filter_data(calc_wheel_position(row), row["ID"])
-        minutes_total = datetime.datetime(year=2023, month=11, day=5, hour=9, minute=54)
+        #minutes_total = datetime.datetime(year=2023, month=11, day=5, hour=9, minute=54)
 
         #if timestamp > start_of_lap:
         #    if row['ID'] == '6':
@@ -103,8 +106,8 @@ def import_csv_damp(filepath, start_time, time_coefficients):
         #        time = time_s.total_seconds()
         #        data_to_export.append([time, data[0]])
 
-        previous_timestamp = timestamp
-        previous_csv_timestamp = row["timestamp"]
+        #previous_timestamp = timestamp
+        #previous_csv_timestamp = row["timestamp"]
         point = (
             Point('damp')
             .tag("ID", f'{row["ID"]}')
