@@ -145,7 +145,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-2024-02-25\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in\" or r[\"_field\"] == \"out\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in\" or r[\"_field\"] == \"out\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -287,7 +287,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-2024-02-25\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in\" or r[\"_field\"] == \"out\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in\" or r[\"_field\"] == \"out\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -393,7 +393,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-2024-02-25\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"delta\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"delta\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -511,7 +511,7 @@
             "type": "influxdb",
             "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
           },
-          "query": "from(bucket: \"telemetry-2024-02-25\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"delta\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"delta\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
@@ -519,11 +519,20 @@
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "description": "",
+        "hide": 2,
+        "name": "bucketName",
+        "query": "telemetry-2023-11-05-Racebox",
+        "skipUrlSync": false,
+        "type": "constant"
+      }
+    ]
   },
   "time": {
     "from": "2024-02-25T16:58:38.248Z",
@@ -531,8 +540,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Telemetry 2024-02-25",
+  "title": "Telemetry 2024-03-01/02",
   "uid": "b822889b-3a27-4958-9eca-fbb6ae69bf4f",
-  "version": 12,
+  "version": 23,
   "weekStart": ""
 }
