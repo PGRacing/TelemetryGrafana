@@ -12,6 +12,7 @@ def import_csv_abs(filepath, start_time):
     # date like '2023-11-04'
     file = open(filepath, "r")
     csv_reader = csv.DictReader(file)
+    next(csv_reader)
     line_count = 0
     points = []
     startTime = datetime.datetime.now()
@@ -23,7 +24,8 @@ def import_csv_abs(filepath, start_time):
         #print(f'{row["timestamp"]}; {row["ID"]}; {row["speed"]}')
         # TODO switch timestamp format
 
-        timestamp = start_time_add_millis_timestamp(start_time, row["timestamp"])
+        #timestamp = start_time_add_millis_timestamp(start_time, row["timestamp"])
+        timestamp = start_time_add_timestamp(start_time, row["timestamp"])
 
         #if line_count < 2:
             #first_timestamp_millis = correct_init_time_millis(int(row["timestamp"]))

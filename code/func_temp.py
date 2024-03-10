@@ -4,7 +4,7 @@ from datetime import datetime
 from conf_influxdb import *
 from utils_timestamp import *
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24_03_01_proto/cooling_system/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-09 Pszczolki/cooling/'
 
 file_counter = 0
 
@@ -31,6 +31,9 @@ def open_file(filefullpath):
     row_counter = 0
 
     for row in csv_reader:
+        if row_counter == 0:
+            row_counter += 1
+            continue
         #print(datetime.datetime.fromtimestamp(float(row['timestamp'])))
         try:
             timestamp = datetime.datetime.fromtimestamp(float(row['timestamp'])) - datetime.timedelta(hours=1)
@@ -42,75 +45,83 @@ def open_file(filefullpath):
             float(row['radiator_r_out'])
         except (ValueError, TypeError) as e:
             #print(e)
-            continue
-
+            continue 
         engine_delta = float(row['engine_out']) - float(row['engine_in'])
         left_radiator_detla = float(row['radiator_l_out']) - float(row['radiator_l_in'])
         right_radiator_delta = float(row['radiator_r_out']) - float(row['radiator_r_in'])
 
-        point = (
-            Point('temp')
-            .tag("temperature", 'engine')
-            .field("out", float(row['engine_out']))
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'engine')
-            .field("in", float(row['engine_in']))
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'engine')
-            .field("delta", engine_delta)
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'radiator_l')
-            .field("in", float(row['radiator_l_in']))
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'radiator_l')
-            .field("out", float(row['radiator_l_out']))
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'radiator_l')
-            .field("delta", left_radiator_detla)
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'radiator_r')
-            .field("in", float(row['radiator_r_in']))
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'radiator_r')
-            .field("out", float(row['radiator_r_out']))
-            .time(timestamp)
-        )
-        points.append(point)
-        point = (
-            Point('temp')
-            .tag("temperature", 'radiator_r')
-            .field("delta", right_radiator_delta)
-            .time(timestamp)
-        )
-        points.append(point)
+        if float(row['engine_out']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'engine')
+                .field("out", float(row['engine_out']))
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['engine_in']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'engine')
+                .field("in", float(row['engine_in']))
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['engine_in']) != -1. and float(row['engine_out']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'engine')
+                .field("delta", engine_delta)
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['radiator_l_in']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'radiator_l')
+                .field("in", float(row['radiator_l_in']))
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['radiator_l_out']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'radiator_l')
+                .field("out", float(row['radiator_l_out']))
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['radiator_l_out']) != -1. and float(row['radiator_l_in']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'radiator_l')
+                .field("delta", left_radiator_detla)
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['radiator_r_in']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'radiator_r')
+                .field("in", float(row['radiator_r_in']))
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['radiator_r_out']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'radiator_r')
+                .field("out", float(row['radiator_r_out']))
+                .time(timestamp)
+            )
+            points.append(point)
+        if float(row['radiator_r_out']) != -1. and float(row['radiator_r_in']) != -1.:
+            point = (
+                Point('temp')
+                .tag("temperature", 'radiator_r')
+                .field("delta", right_radiator_delta)
+                .time(timestamp)
+            )
+            points.append(point)
 
         if row_counter % 200 == 0:
             write_api.write(bucket=bucket, org=org, record=points)
