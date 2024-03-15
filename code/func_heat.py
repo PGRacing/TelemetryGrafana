@@ -16,7 +16,7 @@ class EngineHeat:
             for row in csvreader:
                 self.engine_map.append(row)
         for i in range(1, len(self.engine_map[0])):
-            self.map_values.append(self.engine_map[i][0])
+            self.map_values.append(self.engine_map[0][i])
         self.heat_to_cooling_system = 0.29
         self.air = 14.7
         self.fuel = 1.2
@@ -39,7 +39,6 @@ class EngineHeat:
         smallest_diff_map = 20
         closest_map_index = 1
 
-        # TODO solve this shit 
         i = 1
         for value in self.map_values:
             if abs(map - int(value)) < smallest_diff_map:
@@ -58,7 +57,9 @@ class EngineHeat:
                 volumetric_eff = float(row[closest_map_index])
 
         heat = (volumetric_eff/100 * self.injection_opening_time * self.mass_flow_through_the_injector) * (((closest_rpm * 3/2))/60) * 43000 * self.heat_to_cooling_system 
-
+        
+        if rpm == 0:
+            heat = 0.
         #print(f'rpm: {closest_rpm}, map: {closest_map}, volumetric efficiency: {volumetric_eff}, heat: {heat}')
 
         return heat
@@ -91,32 +92,32 @@ def import_csv_heat(filepath):
             
 
             point = (
-                Point('cooling')
-                .tag("engine", 'to_cooling')
-                .field("heat2", heat)
+                Point('engine')
+                .tag("engine", 'heat')
+                .field("heat3", heat)
                 .time(timestamp)
             )
             points.append(point)
 
             point = (
-                Point('cooling')
-                .tag("engine", 'to_cooling')
+                Point('engine')
+                .tag("engine", 'raw')
                 .field("MAP", int(row['MAP']))
                 .time(timestamp)
             )
             points.append(point)
 
             point = (
-                Point('cooling')
-                .tag("engine", 'to_cooling')
+                Point('engine')
+                .tag("engine", 'raw')
                 .field("RPM", int(row['RPM']))
                 .time(timestamp)
             )
             points.append(point)
 
             point = (
-                Point('cooling')
-                .tag("engine", 'to_cooling')
+                Point('engine')
+                .tag("engine", 'raw')
                 .field("TPS", int(row['TPS']))
                 .time(timestamp)
             )
