@@ -109,65 +109,6 @@ def kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev
 
     return f_gyro, psi
 
-def kalman_gyro2(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_number, x_prev, y_prev, yaw):
-    var_x = 0.5 * 108.17
-    var_y = 0.5 * 69.2
-    var_z = 0.5 * 295.38
-    var_fi = 0.7 * 8.022
-    var_theta = 0.7 * 36.517
-    var_psi = 0.7 * 134.03
-    fi = math.degrees(math.atan(f_acc[1].x[0][0]/ math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    theta = math.degrees(math.atan(-f_acc[0].x[0][0]/ math.sqrt((f_acc[1].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    psi = math.degrees(math.atan(f_acc[0].x[0][0]/ math.sqrt((f_acc[0].x[0][0])**2 + (f_acc[2].x[0][0])**2)))
-    if row_number == 0:
-        psi = 0.
-    elif abs(f_gyro[0].x[1][0]) < 1. \
-        and abs(f_gyro[1].x[1][0]) < 1. \
-        and abs(f_gyro[1].x[1][0]) < 1. :
-        psi = yaw
-    else:
-        lat1 = math.radians(f_gps[0].x[0][0])
-        lat2 = math.radians(y_prev)
-        lon1 = math.radians(f_gps[1].x[0][0])
-        lon2 = math.radians(x_prev)
-        psi_r = math.atan2(math.sin(lon2 - lon1) * math.cos(lat2), math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1))
-        #psi = math.degrees(psi_r)
-
-    if row_number == 0:
-        for i in range(3):
-            f_gyro[i] = KalmanFilter(dim_x=2, dim_z=1)
-            if i == 0:
-                f_gyro[i].x = np.array([[fi], 
-                                        [0.]])  # initial state (position and velocity)
-            elif i == 1:
-                f_gyro[i].x = np.array([[theta], 
-                                        [0.]])
-            else:
-                f_gyro[i].x = np.array([[psi],
-                                        [0.]])
-            
-            f_gyro[i].F = np.array([[1., 1/TIMESTEP], 
-                                    [0., 1.]])  # state transition matrix
-            f_gyro[i].H = np.array([[1., 0.]])  # Measurement function
-            f_gyro[i].P = np.array([[0.0004, 0.], 
-                                    [0., 0.]])  # covariance matrix
-        f_gyro[0].R = np.array([[VAR_GYRO]])
-        f_gyro[1].R = np.array([[VAR_GYRO]])
-        f_gyro[2].R = np.array([[VAR_GYRO]])  # measurement noise
-        f_gyro[0].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_x)  # process noise
-        f_gyro[1].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_y)
-        f_gyro[2].Q = Q_discrete_white_noise(dim=2, dt=TIMESTEP, var=var_z)
-
-
-    f_gyro[0].predict()
-    f_gyro[0].update(gyro_x)
-    f_gyro[1].predict()
-    f_gyro[1].update(gyro_y)
-    f_gyro[2].predict()
-    f_gyro[2].update(gyro_z)
-
-    return f_gyro, fi, theta, psi
-
 
 def kalman_gps(f, lat, lon, row_number):
     signal_loss = False

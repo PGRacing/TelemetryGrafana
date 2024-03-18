@@ -87,10 +87,12 @@ class LapTimer:
                 self.lap_diff = 1
                 self.lap_counter += 1
 
+        current_time = parser.parse(timestamp)
+        self.lap_duration_time = (current_time - self.last_lap_start).total_seconds()
         if self.lap_counter == 0:
             self.last_time = 0.
 
         self.last_x = x
         self.last_y = y
 
-        return (self.last_time, self.lap_diff, self.lap_counter)
+        return (self.last_time, self.lap_diff, self.lap_counter, self.lap_duration_time)

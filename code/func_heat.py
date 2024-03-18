@@ -6,6 +6,7 @@ from code.conf_influxdb import *
 # TODO change filepath
 volumetric_efficiency_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/volumetric_efficiency.csv'
 filepath = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-09 Pszczolki/20240309_134432.csv'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/ecumaster/'
 
 
 def find_closest(array, value):
@@ -75,6 +76,9 @@ def import_csv_heat(filepath):
     month = int(filename[4:6])
     day = int(filename[6:8])
     hour = int(filename[9:11]) - 1
+    if hour == -1:
+        day -= 1
+        hour = 23
     minute = int(filename[11:13])
     second = int(filename[13:15])
     start_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
@@ -120,15 +124,60 @@ def import_csv_heat(filepath):
             )
             points.append(point)
 
-            if row_counter % 1200 == 0:
+            try:
+                point = (
+                    Point('engine')
+                    .tag("engine", 'raw')
+                    .field("Coolant fan", int(row['Coolant fan']))
+                    .time(timestamp)
+                )
+                points.append(point)
+            except KeyError as e:
+                pass
+                
+            try:
+                point = (
+                    Point('engine')
+                    .tag("oil", 'raw')
+                    .field("temp", int(row['Oil temperature']))
+                    .time(timestamp)
+                )
+                points.append(point)
+            except KeyError as e:
+                pass
+
+            try:
+                point = (
+                    Point('engine')
+                    .tag("ecumaster", 'raw')
+                    .field("clt", int(row['CLT']))
+                    .time(timestamp)
+                )
+                points.append(point)
+            except KeyError as e:
+                pass
+
+            if row_counter % 900 == 0:
                 write_api.write(bucket=bucket, org=org, record=points)
                 points.clear()
             row_counter += 1
 
         write_api.write(bucket=bucket, org=org, record=points)
-        print('END OF X FILE')
+        print(f'Succesfully send data from {filename}')
+
+def find_files(path):
+    file_counter = 0
+    startProgram = datetime.datetime.now()
+    for item in os.listdir(path):
+        full_path = os.path.join(path, item)
+
+        if os.path.isfile(full_path) and item.endswith('.csv'):
+            file_counter += 1
+            import_csv_heat(full_path)
+    endProgram = datetime.datetime.now()
+    print(f'Successfully imported {file_counter} files in {endProgram-startProgram}!')
 
 
 if __name__ == "__main__":
     engine_heat = EngineHeat()
-    import_csv_heat(filepath)
+    find_files(path)

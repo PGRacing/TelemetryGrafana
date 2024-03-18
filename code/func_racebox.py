@@ -1,16 +1,17 @@
 import numpy as np
 import csv
+import math
 from conf_influxdb import *
 from kalman_filters import *
 from variances import *
 from lap_timer import *
-import math
+from time_loss import *
 from datetime import datetime
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24_03_03_Pszczolki/racebox/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23-11-05 Pszczolki/racebox/'
 
 GFORCE =  9.80665 # m/s2
 TIMESTEP = 0.04 # s
@@ -21,8 +22,9 @@ best_lap_number = 0
 best_time = 0.
 var_gyro = 0.
 var_acc = 0.
+total_km = 0.
 
-special_lap_acc = []
+special_lap = []
 
 # to be set every track change
 approx_lon = 18.712
@@ -30,7 +32,7 @@ approx_lat = 54.178
 lat_prev = 54.1784441
 lon_prev = 18.7133100
 
-conv_rate_lon = math.cos(approx_lat) * (40075000/360) # deg to met
+conv_rate_lon = math.degrees(math.cos(math.radians(approx_lat))) * (40075000/360) # deg to met
 conv_rate_lat = 111111.0
 
 
@@ -58,15 +60,20 @@ def open_file(filefullpath):
     global best_time
     global last_time
     global special_lap_acc
+    global total_km
     
     with open(filefullpath, 'r') as file:
         lap_timer = LapTimer()
+        #time_loss = TimeLoss()
+        csvreader_object = csv.reader(file)
+        for i in range (1, 13):
+            next(csvreader_object)
         data = csv.DictReader(file)
         points = []
         startTime = datetime.now()
         row_counter = 0
         inner_lap_counter = 0
-        
+        lap_duration_time = 0.
 
         f_gps = list(range(3))
         f_acc = list(range(3))
@@ -109,21 +116,50 @@ def open_file(filefullpath):
             if row_counter == 0:
                 lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
             else:
-                last_time, lap_diff, inner_lap_counter = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
+                last_time, lap_diff, inner_lap_counter, lap_duration_time = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
                 lap_counter += lap_diff
             if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
                     best_time = last_time
                     best_lap_number = lap_counter
 
-            #if lap_counter == 53:
-            #    time = row['Time'][17:23]
-            #    special_lap_acc.append([float(time), float(f_acc[0].x[0]), float(f_acc[1].x[0]), float(f_acc[2].x[0]), float(row['Speed'])])
+            #loss = time_loss.calucate_gain_loss(f_gps[1].x[0][0], f_gps[0].x[0][0], lap_duration_time)
+
+            #if lap_counter == 2:
+                #time = row['Time'][17:23]
+                #special_lap_acc.append([float(time), float(f_acc[0].x[0]), float(f_acc[1].x[0]), float(f_acc[2].x[0]), float(row['Speed'])])
+                #special_lap.append([float(f_gps[1].x[0][0]), float(f_gps[0].x[0][0]), lap_duration_time])
 
             if row_counter > 0:
                 ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
                 roll += f_gyro[0].x[1][0]
                 pitch += f_gyro[1].x[1][0]
                 yaw = wrap_angle(yaw)
+
+                total_km += calc_kilometers_driven(math.radians(f_gps[0].x[0][0]), math.radians(f_gps[1].x[0][0]), math.radians(lat_prev), math.radians(lon_prev))
+
+                point = (
+                    Point('gps')
+                    .tag("ID", 'total2')
+                    .field("km_driven", total_km)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                point = (
+                    Point('lap_times')
+                    .tag("lap_time", 'loss')
+                    #.field("time_loss2", loss)
+                    .time(timestamp)
+                )
+                #points.append(point)
+
+                point = (
+                    Point('lap_times')
+                    .tag("lap", 'duration')
+                    .field("lap_duration", lap_duration_time)
+                    .time(timestamp)
+                )
+                points.append(point)
 
                 point = (
                     Point('lap_times')
@@ -337,10 +373,10 @@ def open_file(filefullpath):
 
         write_api.write(bucket=bucket, org=org, record=points)
         endTime = datetime.now()
-        #with open('lap_53_no_steering_wheel.csv', 'w') as savu_file:
+        #with open('Pszczolki_fastest_long_lap.csv', 'w') as savu_file:
             #writer = csv.writer(savu_file)
-            #writer.writerow(['seconds', 'acc_x', 'acc_y', 'acc_z', 'speed'])
-            #writer.writerows(special_lap_acc)
+            #writer.writerow(['lon', 'lat', 'time'])
+            #writer.writerows(special_lap)
         print(f'Calculated file number {file_counter} in {endTime - startTime}')
 
 
@@ -351,5 +387,15 @@ def wrap_angle(angle):
     while angle < 0:
         angle+=360
     return angle
-   
+
+
+def calc_kilometers_driven(lat_current, lon_current, lat_prev, lon_prev):
+    radius_earth_km = 6371.0
+    delta_lat = lat_current - lat_prev
+    delta_lon = lon_current - lon_prev
+    a = math.sin(delta_lat / 2)**2 + math.cos(lat_prev) * math.cos(lat_current) * math.sin(delta_lon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance_km = radius_earth_km * c
+    return distance_km
+
 find_racebox(path)
