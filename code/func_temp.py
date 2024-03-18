@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from conf_influxdb import *
 from utils_timestamp import *
+from code.test_functions.filters import FirFilter
 
 path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/cooling/'
 
@@ -32,7 +33,10 @@ def open_file(filefullpath):
     delta_lr_out = 0.
     delta_engine_in = 0.
     delta_engine_out = 0.
-        
+    fir_filters = []
+    fir_window = 10
+    for i in range(6):
+        fir_filters.append(FirFilter([1/fir_window for _ in range(fir_window)]))
     startTime = datetime.datetime.now()
     row_counter = 0
 
@@ -53,17 +57,17 @@ def open_file(filefullpath):
             #print(e)
             continue 
         engine_delta = float(row['engine_out']) - float(row['engine_in'])
-        left_radiator_detla = float(row['radiator_l_out']) - float(row['radiator_l_in'])
+        left_radiator_delta = float(row['radiator_l_out']) - float(row['radiator_l_in'])
         right_radiator_delta = float(row['radiator_r_out']) - float(row['radiator_r_in'])
 
         if row_counter > 1:
             timestep = float(row['timestamp']) - time_prev
-            delta_rr_in = (float(row['radiator_r_in']) - rr_in_prev)/timestep
-            delta_lr_in = (float(row['radiator_l_in']) - lr_in_prev)/timestep
-            delta_rr_out = (float(row['radiator_r_out']) - rr_out_prev)/timestep
-            delta_lr_out = (float(row['radiator_l_out']) - lr_out_prev)/timestep
-            delta_engine_in = (float(row['engine_in']) - engine_in_prev)/timestep
-            delta_engine_out = (float(row['engine_out']) - engine_out_prev)/timestep
+            delta_rr_in = fir_filters[0].filter((float(row['radiator_r_in']) - rr_in_prev)/timestep)
+            delta_lr_in = fir_filters[1].filter((float(row['radiator_l_in']) - lr_in_prev)/timestep)
+            delta_rr_out = fir_filters[2].filter((float(row['radiator_r_out']) - rr_out_prev)/timestep)
+            delta_lr_out = fir_filters[3].filter((float(row['radiator_l_out']) - lr_out_prev)/timestep)
+            delta_engine_in = fir_filters[4].filter((float(row['engine_in']) - engine_in_prev)/timestep)
+            delta_engine_out = fir_filters[5].filter((float(row['engine_out']) - engine_out_prev)/timestep)
 
         rr_in_prev = float(row['radiator_r_in'])
         rr_out_prev = float(row['radiator_r_out'])
@@ -121,7 +125,7 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'radiator_l')
-                .field("delta", left_radiator_detla)
+                .field("delta", left_radiator_delta)
                 .time(timestamp)
             )
             points.append(point)
