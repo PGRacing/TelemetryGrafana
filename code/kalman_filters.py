@@ -175,7 +175,7 @@ def kalman_temp(f, engine_in, engine_out, lr_in, lr_out, rr_in, rr_out, row_numb
     #var = 0.5 * 0.0259
     var = 0.5 * 0.0003
     #var_cooling = 0.003191606129303
-    var_cooling = 0.1
+    var_cooling = 1.
     timestep = 1.004987702853438
     if row_number == 1:
         for i in range(6):
@@ -205,7 +205,7 @@ def kalman_temp(f, engine_in, engine_out, lr_in, lr_out, rr_in, rr_out, row_numb
             f[i].P = np.array([[10., 0.], 
                                 [0., 10.]])  # covariance matrix
             f[i].R = np.array([[var_cooling]])  # measurement noise
-        f[i].Q = Q_discrete_white_noise(dim=2, dt=timestep, var=var)  # process noise
+            f[i].Q = Q_discrete_white_noise(dim=2, dt=timestep, var=var)  # process noise
 
     for i in range(6):
         f[i].predict()
