@@ -24,6 +24,10 @@ def find_file(path):
 
 
 def open_file(filefullpath):
+    def temp_differentiate(prev, current, timestep, filter):
+        value = (current - prev)/timestep
+        return filter.filter(value if abs(value) < 2.0 else 0.0)
+    
     file = open(filefullpath, "r")
     csv_reader = csv.DictReader(file)
     points = []
@@ -62,12 +66,12 @@ def open_file(filefullpath):
 
         if row_counter > 1:
             timestep = float(row['timestamp']) - time_prev
-            delta_rr_in = fir_filters[0].filter((float(row['radiator_r_in']) - rr_in_prev)/timestep)
-            delta_lr_in = fir_filters[1].filter((float(row['radiator_l_in']) - lr_in_prev)/timestep)
-            delta_rr_out = fir_filters[2].filter((float(row['radiator_r_out']) - rr_out_prev)/timestep)
-            delta_lr_out = fir_filters[3].filter((float(row['radiator_l_out']) - lr_out_prev)/timestep)
-            delta_engine_in = fir_filters[4].filter((float(row['engine_in']) - engine_in_prev)/timestep)
-            delta_engine_out = fir_filters[5].filter((float(row['engine_out']) - engine_out_prev)/timestep)
+            delta_rr_in = temp_differentiate(rr_in_prev, float(row['radiator_r_in']), timestep, fir_filters[0])
+            delta_lr_in = temp_differentiate(lr_in_prev, float(row['radiator_l_in']), timestep, fir_filters[1])
+            delta_rr_out = temp_differentiate(rr_out_prev, float(row['radiator_r_out']), timestep, fir_filters[2])
+            delta_lr_out = temp_differentiate(lr_out_prev, float(row['radiator_l_out']), timestep, fir_filters[3])
+            delta_engine_in = temp_differentiate(engine_in_prev, float(row['engine_in']), timestep, fir_filters[4])
+            delta_engine_out = temp_differentiate(engine_out_prev, float(row['engine_out']), timestep, fir_filters[5])
 
         rr_in_prev = float(row['radiator_r_in'])
         rr_out_prev = float(row['radiator_r_out'])
