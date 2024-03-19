@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from datetime import datetime
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 
@@ -170,5 +169,53 @@ def velocity_acc(f_acc, acc_prev_x, acc_prev_y, acc_prev_z):
     return area_x, area_y, area_z
 
 
+def kalman_temp(f, engine_in, engine_out, lr_in, lr_out, rr_in, rr_out, row_number):
+    #var = 0.5 * 4.97 
+    #var =  0.5 * 0.109
+    #var = 0.5 * 0.0259
+    var = 0.5 * 0.0003
+    #var_cooling = 0.003191606129303
+    var_cooling = 0.1
+    timestep = 1.004987702853438
+    if row_number == 1:
+        for i in range(6):
+            f[i] = KalmanFilter(dim_x=2, dim_z=1)
+            if i == 0:
+                f[i].x = np.array([[engine_in], 
+                                    [0.]])  # initial state (position and velocity)
+            elif i == 1:
+                f[i].x = np.array([[engine_out], 
+                                    [0.]])
+            elif i == 2:
+                f[i].x = np.array([[lr_in],
+                                    [0.]])
+            elif i == 3:
+                f[i].x = np.array([[lr_out], 
+                                    [0.]])
+            elif i == 4:
+                f[i].x = np.array([[rr_in], 
+                                    [0.]])
+            elif i == 5:
+                f[i].x = np.array([[rr_out], 
+                                    [0.]])
+            
+            f[i].F = np.array([[1., timestep], 
+                                [0., 1.]])  # state transition matrix
+            f[i].H = np.array([[1., 0.]])  # Measurement function
+            f[i].P = np.array([[10., 0.], 
+                                [0., 10.]])  # covariance matrix
+            f[i].R = np.array([[var_cooling]])  # measurement noise
+        f[i].Q = Q_discrete_white_noise(dim=2, dt=timestep, var=var)  # process noise
+
+    for i in range(6):
+        f[i].predict()
+    f[0].update(engine_in)
+    f[1].update(engine_out)
+    f[2].update(lr_in)
+    f[3].update(lr_out)
+    f[4].update(rr_in)
+    f[5].update(rr_out)
+
+    return f
 
 

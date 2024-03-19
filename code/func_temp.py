@@ -3,9 +3,10 @@ import os
 from datetime import datetime
 from conf_influxdb import *
 from utils_timestamp import *
-from code.test_functions.filters import FirFilter, get_alpha, low_pass_filter
+from kalman_filters import *
+from test_functions.filters import FirFilter, get_alpha, low_pass_filter
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/cooling/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-16 proto/cooling/'
 
 file_counter = 0
 
@@ -41,6 +42,9 @@ def open_file(filefullpath):
     delta_engine_out = 0.
     fir_filters = []
     fir_window = 10
+
+    f_temp = list(range(6))
+
     for i in range(6):
         fir_filters.append(FirFilter([1/fir_window for _ in range(fir_window)]))
     startTime = datetime.datetime.now()
@@ -66,14 +70,17 @@ def open_file(filefullpath):
         left_radiator_delta = float(row['radiator_l_out']) - float(row['radiator_l_in'])
         right_radiator_delta = float(row['radiator_r_out']) - float(row['radiator_r_in'])
 
-        if row_counter > 1:
-            timestep = float(row['timestamp']) - time_prev
-            delta_rr_in = temp_differentiate(rr_in_prev, float(row['radiator_r_in']), timestep, fir_filters[0])
-            delta_lr_in = temp_differentiate(lr_in_prev, float(row['radiator_l_in']), timestep, fir_filters[1])
-            delta_rr_out = temp_differentiate(rr_out_prev, float(row['radiator_r_out']), timestep, fir_filters[2])
-            delta_lr_out = temp_differentiate(lr_out_prev, float(row['radiator_l_out']), timestep, fir_filters[3])
-            delta_engine_in = temp_differentiate(engine_in_prev, float(row['engine_in']), timestep, fir_filters[4])
-            delta_engine_out = temp_differentiate(engine_out_prev, float(row['engine_out']), timestep, fir_filters[5])
+
+        f_temp = kalman_temp(f_temp, float(row['engine_in']), float(row['engine_out']), float(row['radiator_l_in']), float(row['radiator_l_out']), float(row['radiator_r_in']),float(row['radiator_r_out']), row_counter)
+
+        #if row_counter > 1:
+            #timestep = float(row['timestamp']) - time_prev
+            #delta_rr_in = temp_differentiate(rr_in_prev, float(row['radiator_r_in']), timestep, fir_filters[0])
+            #delta_lr_in = temp_differentiate(lr_in_prev, float(row['radiator_l_in']), timestep, fir_filters[1])
+            #delta_rr_out = temp_differentiate(rr_out_prev, float(row['radiator_r_out']), timestep, fir_filters[2])
+            #delta_lr_out = temp_differentiate(lr_out_prev, float(row['radiator_l_out']), timestep, fir_filters[3])
+            #delta_engine_in = temp_differentiate(engine_in_prev, float(row['engine_in']), timestep, fir_filters[4])
+            #delta_engine_out = temp_differentiate(engine_out_prev, float(row['engine_out']), timestep, fir_filters[5])
 
         rr_in_prev = float(row['radiator_r_in'])
         rr_out_prev = float(row['radiator_r_out'])
@@ -87,8 +94,8 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'engine')
-                .field("out", float(row['engine_out']))
-                .field("out_delta3", delta_engine_out)
+                .field("out", f_temp[1].x[0][0])
+                .field("out_delta5", f_temp[1].x[1][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -96,8 +103,8 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'engine')
-                .field("in", float(row['engine_in']))
-                .field("in_delta3", delta_engine_in)
+                .field("in", f_temp[0].x[0][0])
+                .field("in_delta5", f_temp[0].x[1][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -113,8 +120,8 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'radiator_l')
-                .field("in", float(row['radiator_l_in']))
-                .field("in_delta3", delta_lr_in)
+                .field("in", f_temp[2].x[0][0])
+                .field("in_delta5", f_temp[2].x[1][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -122,8 +129,8 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'radiator_l')
-                .field("out", float(row['radiator_l_out']))
-                .field("out_delta3", delta_lr_out)
+                .field("out", f_temp[3].x[0][0])
+                .field("out_delta5", f_temp[3].x[1][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -139,8 +146,8 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'radiator_r')
-                .field("in", float(row['radiator_r_in']))
-                .field("in_delta3", delta_rr_in)
+                .field("in", f_temp[4].x[0][0])
+                .field("in_delta5", f_temp[4].x[1][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -148,8 +155,8 @@ def open_file(filefullpath):
             point = (
                 Point('temp')
                 .tag("temperature", 'radiator_r')
-                .field("out", float(row['radiator_r_out']))
-                .field("out_delta3", delta_rr_out)
+                .field("out", f_temp[5].x[0][0])
+                .field("out_delta5", f_temp[5].x[1][0])
                 .time(timestamp)
             )
             points.append(point)
