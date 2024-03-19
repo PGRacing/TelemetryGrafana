@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from conf_influxdb import *
 from utils_timestamp import *
-from code.test_functions.filters import FirFilter
+from code.test_functions.filters import FirFilter, get_alpha, low_pass_filter
 
 path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/cooling/'
 
@@ -26,8 +26,10 @@ def find_file(path):
 def open_file(filefullpath):
     def temp_differentiate(prev, current, timestep, filter):
         value = (current - prev)/timestep
-        return filter.filter(value if abs(value) < 2.0 else 0.0)
-    
+        prev_diff = filter.get_last_value()
+        value = filter.filter(value if abs(value) < 2.0 else 0.0)
+        return low_pass_filter(prev_diff, value, get_alpha(1.0, 0.5))
+
     file = open(filefullpath, "r")
     csv_reader = csv.DictReader(file)
     points = []

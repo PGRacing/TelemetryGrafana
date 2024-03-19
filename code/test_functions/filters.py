@@ -13,10 +13,14 @@ class FirFilter:
     def __init__(self, coefficients):
         self.coefficients = coefficients
         self.last_values = [0] * (len(coefficients) - 1)
+        self.sum = 0
 
     def filter(self, value):
-        sum = value * self.coefficients[0]
+        self.sum = value * self.coefficients[0]
         for i in range(len(self.last_values)):
-            sum += self.last_values[i] * self.coefficients[i + 1]
+            self.sum += self.last_values[i] * self.coefficients[i + 1]
         self.last_values = [value] + self.last_values[:-1]
-        return sum
+        return self.sum
+
+    def get_last_value(self):
+        return self.sum
