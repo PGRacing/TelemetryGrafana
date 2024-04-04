@@ -136,17 +136,17 @@ def calc_var_temp(file_path):
         avg_timestep = timesteps_sum/len(temp_data[6])
     return absolute_var, avg_timestep
 
+if __name__ == '__main__':
+    #acc = calc_var_acc(file_path=path + 'RB-1.csv', sensor='racebox')
+    #print(f'acc variance: {acc:.10f}')
+    # for racebox: 0.0000053744
+    #gyro = calc_var_gyro(file_path=path + 'RB-1.csv', sensor='racebox')
+    #print(f'gyro variance: {gyro:.10f}')
+    # for racebox: 0.0000053744
+    #gps = calc_var_gps(file_path=path + 'RB-1.csv', sensor='racebox')
+    #print(f'gps variance: {gps:.15f}')
+    # for racebox: 0.000000000003664
 
-#acc = calc_var_acc(file_path=path + 'RB-1.csv', sensor='racebox')
-#print(f'acc variance: {acc:.10f}')
-# for racebox: 0.0000053744
-#gyro = calc_var_gyro(file_path=path + 'RB-1.csv', sensor='racebox')
-#print(f'gyro variance: {gyro:.10f}')
-# for racebox: 0.0000053744
-#gps = calc_var_gps(file_path=path + 'RB-1.csv', sensor='racebox')
-#print(f'gps variance: {gps:.15f}')
-# for racebox: 0.000000000003664
-
-temp, timestep = calc_var_temp(path)
-print(f'temp variance: {temp:.15f}')
-print(f'avg timestep: {timestep:.15f}')
+    temp, timestep = calc_var_temp(path)
+    print(f'temp variance: {temp:.15f}')
+    print(f'avg timestep: {timestep:.15f}')

@@ -3,6 +3,7 @@ import csv
 import math
 from conf_influxdb import *
 from kalman_filters import *
+from data_filtration import *
 from variances import *
 from lap_timer import *
 from time_loss import *
@@ -11,7 +12,7 @@ from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23-11-05 Pszczolki/racebox/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-09 Pszczolki/racebox/'
 
 GFORCE =  9.80665 # m/s2
 TIMESTEP = 0.04 # s
@@ -64,10 +65,13 @@ def open_file(filefullpath):
     
     with open(filefullpath, 'r') as file:
         lap_timer = LapTimer()
+        gps_data = GPSKalman()
+        acc_data = ACCKalman()
+        gyro_data = GYROKalman()
         #time_loss = TimeLoss()
         csvreader_object = csv.reader(file)
-        for i in range (1, 13):
-            next(csvreader_object)
+        #for i in range (1, 13):
+            #next(csvreader_object)
         data = csv.DictReader(file)
         points = []
         startTime = datetime.now()
@@ -75,9 +79,9 @@ def open_file(filefullpath):
         inner_lap_counter = 0
         lap_duration_time = 0.
 
-        f_gps = list(range(3))
-        f_acc = list(range(3))
-        f_gyro = list(range(3))
+        #f_gps = list(range(3))
+        #f_acc = list(range(3))
+        #f_gyro = list(range(3))
         
         ang_vel_prev_x = 0.
         ang_vel_prev_y = 0.
@@ -91,11 +95,16 @@ def open_file(filefullpath):
         vel_y = 0.
         vel_z = 0.
 
-        #acc_prev_x = 0.189
-        #acc_prev_y = 0.037
-        #acc_prev_z = 0.990
+
+        gps_data.init_kalman()
+        acc_data.init_kalman()
+        gyro_data.init_kalman()
+
 
         for row in data:
+            signal_loss_gps = False
+            signal_loss_acc = False
+            signal_loss_gyro = False
             gyro_x = float(row['GyroX'])
             gyro_y = float(row['GyroY'])
             gyro_z = float(row['GyroZ'])
@@ -109,166 +118,185 @@ def open_file(filefullpath):
     #vel_x = f_gps[0].x[1][0] * conv_rate_lon
     #vel_y = f_gps[1].x[1][0] * conv_rate_lat
 
+            if not row['Latitude'] or not row['Longitude']:
+                signal_loss_gps = True
+            gps_data.filter_gps(float(row['Latitude']), float(row['Longitude']), signal_loss_gps)
+
+            if not row['GForceX'] or not row['GForceY'] or not row['GForceZ']:
+                signal_loss_acc = True
+            acc_data.filter_acc(GForceX, GForceY, GForceZ, signal_loss_acc)
+
+            if not gyro_x or not gyro_y or not gyro_z:
+                signal_loss_gyro = True
+            gyro_data.filter_gyro(gyro_x, gyro_y, gyro_z, signal_loss_gyro)
+            yaw = gyro_data.calc_and_wrap_yaw(lon_prev, lat_prev)
+            roll += gyro_data.f[0].x[1][0]
+            pitch += gyro_data.f[1].x[1][0]
+
+            
+            '''
             f_gps = kalman_gps(f_gps, float(row['Latitude']), float(row['Longitude']), row_counter)
+            
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter)
             f_gyro, yaw = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, yaw)
-            
+            '''
             if row_counter == 0:
-                lap_timer.init_position(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], time=timestamp)
+                lap_timer.init_position(x=gps_data.f[1].x[0][0], y=gps_data.f[0].x[0][0], time=timestamp)
             else:
-                last_time, lap_diff, inner_lap_counter, lap_duration_time = lap_timer.check(x=f_gps[1].x[0][0], y=f_gps[0].x[0][0], timestamp=timestamp)
+                last_time, lap_diff, inner_lap_counter, lap_duration_time = lap_timer.check(x=gps_data.f[1].x[0][0], y=gps_data.f[0].x[0][0], timestamp=timestamp)
                 lap_counter += lap_diff
             if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
                     best_time = last_time
                     best_lap_number = lap_counter
-
-            #loss = time_loss.calucate_gain_loss(f_gps[1].x[0][0], f_gps[0].x[0][0], lap_duration_time)
+            
+            #loss = time_loss.calucate_gain_loss(gps_data.f[1].x[0][0], gps_data.f[0].x[0][0], lap_duration_time)
 
             #if lap_counter == 2:
                 #time = row['Time'][17:23]
                 #special_lap_acc.append([float(time), float(f_acc[0].x[0]), float(f_acc[1].x[0]), float(f_acc[2].x[0]), float(row['Speed'])])
                 #special_lap.append([float(f_gps[1].x[0][0]), float(f_gps[0].x[0][0]), lap_duration_time])
-
+            '''
             if row_counter > 0:
-                ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(f_gyro, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+                
                 roll += f_gyro[0].x[1][0]
                 pitch += f_gyro[1].x[1][0]
                 yaw = wrap_angle(yaw)
+            '''
+            ang_acc_x, ang_acc_y, ang_acc_z = angular_acceleration(gyro_data, ang_vel_prev_x, ang_vel_prev_y, ang_vel_prev_z)
+            total_km += calc_kilometers_driven(math.radians(gps_data.f[0].x[0][0]), math.radians(gps_data.f[1].x[0][0]), math.radians(lat_prev), math.radians(lon_prev))
+            
+            point = (
+                Point('gps')
+                .tag("ID", 'total2')
+                .field("km_driven", total_km)
+                .time(timestamp)
+            )
+            points.append(point)
 
-                total_km += calc_kilometers_driven(math.radians(f_gps[0].x[0][0]), math.radians(f_gps[1].x[0][0]), math.radians(lat_prev), math.radians(lon_prev))
+            point = (
+                Point('lap_times')
+                .tag("lap_time", 'loss')
+                #.field("time_loss2", loss)
+                .time(timestamp)
+            )
+            #points.append(point)
 
-                point = (
-                    Point('gps')
-                    .tag("ID", 'total2')
-                    .field("km_driven", total_km)
-                    .time(timestamp)
-                )
-                points.append(point)
+            point = (
+                Point('lap_times')
+                .tag("lap", 'duration')
+                #.field("lap_duration", lap_duration_time)
+                .time(timestamp)
+            )
+            points.append(point)
 
-                point = (
-                    Point('lap_times')
-                    .tag("lap_time", 'loss')
-                    #.field("time_loss2", loss)
-                    .time(timestamp)
-                )
-                #points.append(point)
+            point = (
+                Point('lap_times')
+                .tag("lap_time", 'last')
+                #.field("last_time", last_time)
+                .time(timestamp)
+            )
+            points.append(point)
 
-                point = (
-                    Point('lap_times')
-                    .tag("lap", 'duration')
-                    .field("lap_duration", lap_duration_time)
-                    .time(timestamp)
-                )
-                points.append(point)
+            point = (
+                Point('lap_times')
+                .tag('lap_time', 'best')
+                .field('best_time', best_time)
+                .time(timestamp)
+            )
+            points.append(point)
 
-                point = (
-                    Point('lap_times')
-                    .tag("lap_time", 'last')
-                    .field("last_time", last_time)
-                    .time(timestamp)
-                )
-                points.append(point)
+            point = (
+                Point('lap_times')
+                .tag('lap_time', 'best_lap_number')
+                .field('best_lap_number', best_lap_number)
+                .time(timestamp)
+            )
+            points.append(point)
 
-                point = (
-                    Point('lap_times')
-                    .tag('lap_time', 'best')
-                    .field('best_time', best_time)
-                    .time(timestamp)
-                )
-                points.append(point)
+            point = (
+                Point('lap_times')
+                .tag('lap_time', 'lap_number')
+                .field('lap_counter', lap_counter)
+                .time(timestamp)
+            )
+            points.append(point)
 
-                point = (
-                    Point('lap_times')
-                    .tag('lap_time', 'best_lap_number')
-                    .field('best_lap_number', best_lap_number)
-                    .time(timestamp)
-                )
-                points.append(point)
-
-                point = (
-                    Point('lap_times')
-                    .tag('lap_time', 'lap_number')
-                    .field('lap_counter', lap_counter)
-                    .time(timestamp)
-                )
-                points.append(point)
-
-                # ang acc x
-                point = (
-                    Point('angular_acc')
-                    .tag("axis", "x")
-                    .field("ang_acc_x", ang_acc_x)
-                    .time(timestamp)
-                )
-                points.append(point)
-                
-                # ang acc x
-                point = (
-                    Point('angular_acc')
-                    .tag("axis", "y")
-                    .field("ang_acc_y", ang_acc_y)
-                    .time(timestamp)
-                )
-                points.append(point)
-                
-                # ang acc x
-                point = (
-                    Point('angular_acc')
-                    .tag("axis", "z")
-                    .field("ang_acc_z", ang_acc_z)
-                    .time(timestamp)
-                )
-                points.append(point)
-
-                # roll angle
-                point = (
-                    Point('angles')
-                    .tag('axis', 'x')
-                    .field('roll_angle', roll)
-                    .time(timestamp)
-                )
-                points.append(point)
-
-                # pitch angle
-                point = (
-                    Point('angles')
-                    .tag('axis', 'y')
-                    .field('pitch_angle', pitch)
-                    .time(timestamp)
-                )
-                points.append(point)
-
-                # yaw angle
-                point = (
-                    Point('angles')
-                    .tag('axis', 'z')
-                    .field('yaw_angle', yaw)
-                    .time(timestamp)
-                )
-                points.append(point)
+            # ang acc x
+            point = (
+                Point('angular_acc')
+                .tag("axis", "x")
+                .field("ang_acc_x", ang_acc_x)
+                .time(timestamp)
+            )
+            points.append(point)
+            
+            # ang acc x
+            point = (
+                Point('angular_acc')
+                .tag("axis", "y")
+                .field("ang_acc_y", ang_acc_y)
+                .time(timestamp)
+            )
+            points.append(point)
+            
+            # ang acc x
+            point = (
+                Point('angular_acc')
+                .tag("axis", "z")
+                .field("ang_acc_z", ang_acc_z)
+                .time(timestamp)
+            )
+            points.append(point)
 
 
-            vel_x += ((f_acc[0].x[1][0]) * 3.6)
-            vel_y += ((f_acc[1].x[1][0]) * 3.6)
-            vel_z += ((f_acc[2].x[1][0]) * 3.6)
 
-            ang_vel_prev_x = f_gyro[0].x[0][0]
-            ang_vel_prev_y = f_gyro[1].x[0][0]
-            ang_vel_prev_z = f_gyro[2].x[0][0]
+            # roll angle
+            point = (
+                Point('angles')
+                .tag('axis', 'x')
+                .field('roll_angle', roll)
+                .time(timestamp)
+            )
+            points.append(point)
 
-            lat_prev = f_gps[0].x[0][0]
-            lon_prev = f_gps[1].x[0][0]
+            # pitch angle
+            point = (
+                Point('angles')
+                .tag('axis', 'y')
+                .field('pitch_angle', pitch)
+                .time(timestamp)
+            )
+            points.append(point)
 
-            #acc_prev_x = f_acc[0].x[0][0]
-            #acc_prev_y = f_acc[1].x[0][0]
-            #acc_prev_z = f_acc[1].x[0][0]
+            # yaw angle
+            point = (
+                Point('angles')
+                .tag('axis', 'z')
+                .field('yaw_angle', yaw)
+                .time(timestamp)
+            )
+            points.append(point)
+            
+
+            vel_x += ((acc_data.f[0].x[1][0]) * 3.6)
+            vel_y += ((acc_data.f[1].x[1][0]) * 3.6)
+            vel_z += ((acc_data.f[2].x[1][0]) * 3.6)
+
+            ang_vel_prev_x = gyro_data.f[0].x[0][0]
+            ang_vel_prev_y = gyro_data.f[1].x[0][0]
+            ang_vel_prev_z = gyro_data.f[2].x[0][0]
+
+            lat_prev = gps_data.f[0].x[0][0]
+            lon_prev = gps_data.f[1].x[0][0]
 
             # latitude and longitude
             point = (
                 Point('gps')
                 .tag('ID', 'gps_position')
-                .field('latitude', float(f_gps[0].x[0][0]))
-                .field('longitude', float(f_gps[1].x[0][0]))
+                #.field('latitude', float(f_gps[0].x[0][0]))
+                #.field('longitude', float(f_gps[1].x[0][0]))
+                .field('latitude', gps_data.f[0].x[0][0])
+                .field('longitude', gps_data.f[1].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -286,7 +314,7 @@ def open_file(filefullpath):
             point = (
                 Point('acc')
                 .tag("axis", "x")
-                .field("acc_x", float(f_acc[0].x[0][0]))
+                .field("acc_x", acc_data.f[0].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -295,7 +323,7 @@ def open_file(filefullpath):
             point = (
                 Point('acc')
                 .tag("axis", "y")
-                .field("acc_y", float(f_acc[1].x[0][0]))
+                .field("acc_y", acc_data.f[1].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -304,16 +332,16 @@ def open_file(filefullpath):
             point = (
                 Point('acc')
                 .tag("axis", "z")
-                .field("acc_z", float(f_acc[2].x[0][0]))
+                .field("acc_z", acc_data.f[2].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
-
+            
                 # gyro_x
             point = (
                 Point('gyro')
                 .tag("axis", "x")
-                .field("gyro_x", float(f_gyro[0].x[0][0]))
+                .field("gyro_x", gyro_data.f[0].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -322,7 +350,7 @@ def open_file(filefullpath):
             point = (
                 Point('gyro')
                 .tag("axis", "y")
-                .field("gyro_y", float(f_gyro[1].x[0][0]))
+                .field("gyro_y", gyro_data.f[1].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
@@ -331,12 +359,10 @@ def open_file(filefullpath):
             point = (
                 Point('gyro')
                 .tag("axis", "z")
-                .field("gyro_z", float(f_gyro[2].x[0][0]))
+                .field("gyro_z", gyro_data.f[2].x[0][0])
                 .time(timestamp)
             )
             points.append(point)
-
-            
 
             # velocity x
             point = (
@@ -398,4 +424,5 @@ def calc_kilometers_driven(lat_current, lon_current, lat_prev, lon_prev):
     distance_km = radius_earth_km * c
     return distance_km
 
-find_racebox(path)
+if __name__ == '__main__':
+    find_racebox(path)

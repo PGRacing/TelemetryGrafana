@@ -149,10 +149,12 @@ def kalman_gps(f, lat, lon, row_number):
 
     return f
 
+
+
 def angular_acceleration(f_gyro, prev_x, prev_y, prev_z):
-    delta_x = float(f_gyro[0].x[0][0]) - prev_x
-    delta_y = float(f_gyro[1].x[0][0]) - prev_y
-    delta_z = float(f_gyro[2].x[0][0]) - prev_z
+    delta_x = float(f_gyro.f[0].x[0][0]) - prev_x
+    delta_y = float(f_gyro.f[1].x[0][0]) - prev_y
+    delta_z = float(f_gyro.f[2].x[0][0]) - prev_z
 
     ang_acc_x = delta_x/TIMESTEP
     ang_acc_y = delta_y/TIMESTEP
