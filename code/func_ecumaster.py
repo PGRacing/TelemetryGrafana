@@ -24,6 +24,12 @@ class EngineHeat:
     def __init__(self) -> None:
         self.engine_map = []
         self.map_values = []
+        self.tps_values = []
+        for i in range(10, 101, 10):
+            self.tps_values.append([i, 0])
+        self.tps_values_percentage = []
+        for i in range(10, 101, 10):
+            self.tps_values_percentage.append([i, 0])
         with open(volumetric_efficiency_path, 'r') as file:
             csvreader = csv.reader(file)
             for row in csvreader:
@@ -65,6 +71,20 @@ class EngineHeat:
         interpolated_water_flow = np.interp(rpm, self.water_flow_RPM, self.water_flow)
         heat = engine_temp_delta * interpolated_water_flow * self.water_heat_capacity
         return heat
+    
+    def update_tps_list(self, tps):
+        for i in range(len(self.tps_values)):
+            if tps <= self.tps_values[i][0]:
+                self.tps_values[i][1] += 1
+
+    
+    def calc_tps_values_percentage(self):
+        number_of_records = 0
+        for pair in self.tps_values:
+            number_of_records += pair[1]
+        for i in range(len(self.tps_values_percentage)):
+            self.tps_values_percentage[i][1] = self.tps_values[i][1]/number_of_records*100
+        self.tps_values_percentage[9][0] = 99
 
 
 def find_start_time(filename):
@@ -135,10 +155,11 @@ def find_first_cooling_timestamp():
     return first_timestamp
 
 
-def import_csv_heat(filepath, cooling_list, file_counter):
+def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
+    global LAST_TIMESTAMP
     row_counter = 0
     first_match_row_number = 0
-    engine_heat = EngineHeat()
+    #engine_heat = EngineHeat()
     points = []
     split_path = filepath.split("/")
     filename = split_path[-1]
@@ -175,7 +196,7 @@ def import_csv_heat(filepath, cooling_list, file_counter):
 
 
             theoretical_heat = engine_heat.get_heat(int(row['RPM']), int(row['MAP']))
-
+            engine_heat.update_tps_list(int(row['TPS']))
 
             #if (row_counter + first_match_row_number) % 25 == 0:
                 #print('podzielne linijki')
@@ -267,10 +288,11 @@ def import_csv_heat(filepath, cooling_list, file_counter):
                 points.clear()
             row_counter += 1
 
+        LAST_TIMESTAMP = timestamp_grafana
         write_api.write(bucket=bucket, org=org, record=points)
         print(f'Succesfully send data from {filename}')
 
-def find_files(path, cooling_list):
+def find_files(path, cooling_list, engine_heat):
     file_counter = 0
     startProgram = datetime.datetime.now()
     for item in os.listdir(path):
@@ -278,7 +300,7 @@ def find_files(path, cooling_list):
 
         if os.path.isfile(full_path) and item.endswith('.csv'):
             file_counter += 1
-            import_csv_heat(full_path, cooling_list, file_counter)
+            import_csv_heat(full_path, engine_heat, cooling_list, file_counter)
     endProgram = datetime.datetime.now()
     print(f'Successfully imported {file_counter} files in {endProgram-startProgram}!')
 
@@ -300,8 +322,20 @@ def find_match(seconds):
 if __name__ == "__main__":
     #scnds = '1710614428'
     #find_match(scnds)
+    LAST_TIMESTAMP = None
     engine_heat = EngineHeat()
-    cooling_list = list_cooling_system_files(cooling_path)
-    find_files(path, cooling_list)
+    cooling_list = list_cooling_system_files(cooling_path) 
+    find_files(path, cooling_list, engine_heat)
+    points = []
+    engine_heat.calc_tps_values_percentage()
+    for i in range(len(engine_heat.tps_values_percentage)):
+        point = (
+            Point('engine')
+            .tag("TPS", f'{engine_heat.tps_values_percentage[i][0]}%')
+            .field("TPS_percentage", float(engine_heat.tps_values_percentage[i][1]))
+            .time(LAST_TIMESTAMP)
+        )
+        points.append(point)
+    write_api.write(bucket=bucket, org=org, record=points)
 
 
