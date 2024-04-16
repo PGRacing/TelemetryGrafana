@@ -76,6 +76,7 @@ class EngineHeat:
         for i in range(len(self.tps_values)):
             if tps <= self.tps_values[i][0]:
                 self.tps_values[i][1] += 1
+                break
 
     
     def calc_tps_values_percentage(self):
@@ -85,6 +86,13 @@ class EngineHeat:
         for i in range(len(self.tps_values_percentage)):
             self.tps_values_percentage[i][1] = self.tps_values[i][1]/number_of_records*100
         self.tps_values_percentage[9][0] = 99
+
+    def match_range(self, tps):
+        for i in range(len(self.tps_values)):
+            if tps <= self.tps_values[i][0]:
+                self.tps_values[i][1] += 1
+                #print(self.tps_values[i][0])
+                return self.tps_values[i][0]
 
 
 def find_start_time(filename):
@@ -196,7 +204,8 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
 
 
             theoretical_heat = engine_heat.get_heat(int(row['RPM']), int(row['MAP']))
-            engine_heat.update_tps_list(int(row['TPS']))
+            #engine_heat.update_tps_list(int(row['TPS']))
+            tps_range = engine_heat.match_range(int(row['TPS']))
 
             #if (row_counter + first_match_row_number) % 25 == 0:
                 #print('podzielne linijki')
@@ -217,6 +226,14 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
                     .time(timestamp_grafana)
                 )
                 points.append(point)
+
+            point = (
+                Point('engine')
+                .tag("value", 'range')
+                .field("TPS", tps_range)
+                .time(timestamp_grafana)
+            )
+            points.append(point)
 
             point = (
                 Point('engine')
@@ -322,20 +339,21 @@ def find_match(seconds):
 if __name__ == "__main__":
     #scnds = '1710614428'
     #find_match(scnds)
-    LAST_TIMESTAMP = None
+    #LAST_TIMESTAMP = None
     engine_heat = EngineHeat()
     cooling_list = list_cooling_system_files(cooling_path) 
     find_files(path, cooling_list, engine_heat)
-    points = []
-    engine_heat.calc_tps_values_percentage()
-    for i in range(len(engine_heat.tps_values_percentage)):
-        point = (
-            Point('engine')
-            .tag("TPS", f'{engine_heat.tps_values_percentage[i][0]}%')
-            .field("TPS_percentage", float(engine_heat.tps_values_percentage[i][1]))
-            .time(LAST_TIMESTAMP)
-        )
-        points.append(point)
-    write_api.write(bucket=bucket, org=org, record=points)
+    print(engine_heat.tps_values)
+    #points = []
+    #engine_heat.calc_tps_values_percentage()
+    #for i in range(len(engine_heat.tps_values_percentage)):
+        #point = (
+            #Point('engine')
+            #.tag("TPS", f'{engine_heat.tps_values_percentage[i][0]}%')
+            #.field("TPS_percentage", float(engine_heat.tps_values_percentage[i][1]))
+            #.time(LAST_TIMESTAMP)
+        #)
+        #points.append(point)
+    #write_api.write(bucket=bucket, org=org, record=points)
 
 
