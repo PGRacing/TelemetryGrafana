@@ -90,8 +90,8 @@ class ACCKalman:
             if lap_diff == 0:
                 #self.one_lap_container_y = np.append(self.one_lap_container, float(self.f[1].x[0][0]))
                 #self.one_lap_container_x = np.append(self.one_lap_container, float(self.f[0].x[0][0]))
-                self.one_lap_container_y.append( float(self.f[1].x[0][0]))
-                self.one_lap_container_x.append( float(self.f[0].x[0][0]))
+                self.one_lap_container_y.append(abs(float(self.f[1].x[0][0])))
+                self.one_lap_container_x.append(abs(float(self.f[0].x[0][0])))
             else:
                 if(len(self.one_lap_container_x)>0):
                     mean_force_x = mean(self.one_lap_container_x)
