@@ -2,6 +2,7 @@ import math
 import numpy as np
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
+from conf_influxdb import *
 
 class GPSKalman:
     def __init__(self) -> None:
@@ -48,6 +49,10 @@ class ACCKalman:
         self.var_acc = 0.0000053744 # racebox acc
         self.timestep = 0.04 # in racebox
         self.gforce = 9.80665
+        self.laps_send = 0
+        self.one_lap_container_y = []
+        self.one_lap_container_x = []
+        self.curve_gforces = []
 
     def init_kalman(self):
         for i in range(3):
@@ -71,8 +76,6 @@ class ACCKalman:
         self.f[0].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_x)  # process noise
         self.f[1].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_y)
         self.f[2].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_z)
-
-        #return self.f
     
     def filter_acc(self, acc_x:float, acc_y:float, acc_z:float, signal_loss:bool):
         for i in range(3):
@@ -82,7 +85,48 @@ class ACCKalman:
             self.f[1].update(acc_y)
             self.f[2].update(acc_z)
 
-        #return self.f
+    def curve_detector(self, lap_number, lap_diff, timestamp, points):
+        if self.f[1].x[0][0] > -5. and self.f[1].x[0][0] < 5.:
+            if lap_diff == 0:
+                #self.one_lap_container_y = np.append(self.one_lap_container, float(self.f[1].x[0][0]))
+                #self.one_lap_container_x = np.append(self.one_lap_container, float(self.f[0].x[0][0]))
+                self.one_lap_container_y.append( float(self.f[1].x[0][0]))
+                self.one_lap_container_x.append( float(self.f[0].x[0][0]))
+            else:
+                if(len(self.one_lap_container_x)>0):
+                    mean_force_x = mean(self.one_lap_container_x)
+                    mean_force_y = mean(self.one_lap_container_y)
+                    #np.delete(self.one_lap_container_x)
+                    #np.delete(self.one_lap_container_y)
+                    self.one_lap_container_x.clear()
+                    self.one_lap_container_y.clear()
+                    point = (
+                        Point('forcex')
+                        .tag('axis', 'x')
+                        .field("lap_number", lap_number)  # Using tags for indexing lap number if needed
+                        .field("mean_force_x", mean_force_x)
+                        #.field("mean_force_y", mean_force_y)
+                        .time(timestamp)
+                    )
+                    points.append(point)
+
+                    point = (
+                        Point('forcey')
+                        .tag('axis', 'y')
+                        .field("lap_number", lap_number)  # Using tags for indexing lap number if needed
+                        .field("mean_force_y", mean_force_y)
+                        .time(timestamp)
+                    )
+                    points.append(point)
+                    
+                    self.laps_send += 1
+                    self.one_lap_container_y.append( float(self.f[1].x[0][0]))
+                    self.one_lap_container_x.append( float(self.f[0].x[0][0]))
+
+
+    def calc_avg_gforce(self):
+        avg_value = abs(np.mean(self.curve_gforces))
+        return avg_value
 
 class GYROKalman:
     def __init__(self) -> None:
@@ -195,3 +239,10 @@ def wrap_angle(angle):
     while angle < 0:
         angle+=360
     return angle
+
+def mean(array):
+    suma = 0
+    for value in array:
+        suma += value
+    result = suma / len(array)
+    return result
