@@ -86,42 +86,35 @@ class ACCKalman:
             self.f[2].update(acc_z)
 
     def curve_detector(self, lap_number, lap_diff, timestamp, points):
-        if self.f[1].x[0][0] > -5. and self.f[1].x[0][0] < 5.:
-            if lap_diff == 0:
-                #self.one_lap_container_y = np.append(self.one_lap_container, float(self.f[1].x[0][0]))
-                #self.one_lap_container_x = np.append(self.one_lap_container, float(self.f[0].x[0][0]))
-                self.one_lap_container_y.append(abs(float(self.f[1].x[0][0])))
-                self.one_lap_container_x.append(abs(float(self.f[0].x[0][0])))
-            else:
-                if(len(self.one_lap_container_x)>0):
-                    mean_force_x = mean(self.one_lap_container_x)
-                    mean_force_y = mean(self.one_lap_container_y)
-                    #np.delete(self.one_lap_container_x)
-                    #np.delete(self.one_lap_container_y)
-                    self.one_lap_container_x.clear()
-                    self.one_lap_container_y.clear()
-                    point = (
-                        Point('forcex')
-                        .tag('axis', 'x')
-                        .field("lap_number", lap_number)  # Using tags for indexing lap number if needed
-                        .field("mean_force_x", mean_force_x)
-                        #.field("mean_force_y", mean_force_y)
-                        .time(timestamp)
-                    )
-                    points.append(point)
+        if lap_diff == 1:
+            if(len(self.one_lap_container_x)>0):
+                mean_force_x = mean(self.one_lap_container_x)
+                mean_force_y = mean(self.one_lap_container_y)
 
-                    point = (
-                        Point('forcey')
-                        .tag('axis', 'y')
-                        .field("lap_number", lap_number)  # Using tags for indexing lap number if needed
-                        .field("mean_force_y", mean_force_y)
-                        .time(timestamp)
-                    )
-                    points.append(point)
-                    
-                    self.laps_send += 1
-                    self.one_lap_container_y.append( float(self.f[1].x[0][0]))
-                    self.one_lap_container_x.append( float(self.f[0].x[0][0]))
+                self.one_lap_container_x.clear()
+                self.one_lap_container_y.clear()
+                point = (
+                    Point('forcex')
+                    .tag('axis', 'x')
+                    .field("lap_number", lap_number)
+                    .field("mean_force_x", mean_force_x)
+                    #.field("mean_force_y", mean_force_y)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+                point = (
+                    Point('forcey')
+                    .tag('axis', 'y')
+                    .field("lap_number", lap_number)
+                    .field("mean_force_y", mean_force_y)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+        if float(self.f[1].x[0][0]) > -5. and float(self.f[1].x[0][0]) < 5.:
+            self.one_lap_container_y.append(abs(float(self.f[1].x[0][0])))
+            self.one_lap_container_x.append(abs(float(self.f[0].x[0][0])))      
 
 
     def calc_avg_gforce(self):
