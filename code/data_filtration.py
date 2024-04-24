@@ -10,6 +10,7 @@ class GPSKalman:
         self.var = 0.5 * 13.08
         self.var_gps = 0.000000000003664 # racebox gps
         self.timestep = 0.04 # in racebox
+        self.speed_one_lap_container = []
 
     def init_kalman(self):
         for i in range(2):
@@ -29,7 +30,6 @@ class GPSKalman:
             self.f[i].R = np.array([[self.var_gps]])  # measurement noise
             self.f[i].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var)  # process noise
         
-        #return self.f
     
     def filter_gps(self, lat:float, lon:float, signal_loss:bool):
         for i in range(2):
@@ -38,7 +38,22 @@ class GPSKalman:
             self.f[0].update(lat)
             self.f[1].update(lon)
 
-        #return self.f
+    def avg_speed_per_lap(self, lap_number, lap_diff, speed, timestamp, points):
+        if lap_diff == 1:
+            if(len(self.speed_one_lap_container)>0):
+                mean_speed = mean(self.speed_one_lap_container)
+                self.speed_one_lap_container.clear()
+                point = (
+                    Point('spd')
+                    .tag('avg', 'speed')
+                    .field("lap_number", lap_number)
+                    .field("mean_speed", mean_speed)
+                    .time(timestamp)
+                )
+                points.append(point)
+
+        self.speed_one_lap_container.append(speed)
+
     
 class ACCKalman:
     def __init__(self) -> None:
