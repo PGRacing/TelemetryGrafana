@@ -1,4 +1,21 @@
 {
+	"__inputs": [
+    {
+      "name": "DS_INFLUXDB",
+      "label": "InfluxDB",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    },
+    {
+      "name": "VAR_BUCKETNAME",
+      "type": "constant",
+      "label": "bucketName",
+      "value": "telemetry-2023-11-05",
+      "description": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -26,7 +43,7 @@
       "autoZoom": true,
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "defaultLayer": "Satellite",
       "gridPos": {
@@ -45,7 +62,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
@@ -59,7 +76,7 @@
       "autoZoom": true,
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "defaultLayer": "Satellite",
       "gridPos": {
@@ -78,7 +95,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gps\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"gps_position\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)\r\n  |> timeShift(duration: -test2)\r\n",
           "refId": "A"
@@ -91,7 +108,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -184,7 +201,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
@@ -196,7 +213,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -289,7 +306,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"spd\")\r\n  |> filter(fn: (r) => r[\"Record\"] == \"velocity\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"speed\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -301,7 +318,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -418,7 +435,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"acc\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"acc_x\" or r[\"_field\"] == \"acc_y\" or r[\"_field\"] == \"acc_z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
@@ -430,7 +447,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -547,7 +564,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"acc\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"acc_x\" or r[\"_field\"] == \"acc_y\" or r[\"_field\"] == \"acc_z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -559,7 +576,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -676,7 +693,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gyro\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"gyro_x\" or r[\"_field\"] == \"gyro_y\" or r[\"_field\"] == \"gyro_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
@@ -688,7 +705,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -805,7 +822,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gyro\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"gyro_x\" or r[\"_field\"] == \"gyro_y\" or r[\"_field\"] == \"gyro_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -817,7 +834,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -934,7 +951,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angular_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ang_acc_x\" or r[\"_field\"] == \"ang_acc_y\" or r[\"_field\"] == \"ang_acc_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
@@ -946,7 +963,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1063,7 +1080,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angular_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ang_acc_x\" or r[\"_field\"] == \"ang_acc_y\" or r[\"_field\"] == \"ang_acc_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -1075,7 +1092,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1191,7 +1208,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angles\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"pitch_angle\" or r[\"_field\"] == \"roll_angle\" or r[\"_field\"] == \"yaw_angle\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
@@ -1203,7 +1220,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1319,7 +1336,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"angles\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"pitch_angle\" or r[\"_field\"] == \"roll_angle\" or r[\"_field\"] == \"yaw_angle\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -1331,7 +1348,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1447,7 +1464,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vel_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"vel_x\" or r[\"_field\"] == \"vel_y\" or r[\"_field\"] == \"vel_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
@@ -1459,7 +1476,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1575,7 +1592,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"vel_acc\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"vel_x\" or r[\"_field\"] == \"vel_y\" or r[\"_field\"] == \"vel_z\")\r\n  |> filter(fn: (r) => r[\"axis\"] == \"x\" or r[\"axis\"] == \"y\" or r[\"axis\"] == \"z\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -1587,7 +1604,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1781,7 +1798,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in\" or r[\"_field\"] == \"out\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
@@ -1793,7 +1810,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1987,7 +2004,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in\" or r[\"_field\"] == \"out\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
@@ -1999,7 +2016,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2136,7 +2153,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "getStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap1}), stop: getFinishTime(lapNumber: ${lap1}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"delta\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
@@ -2148,7 +2165,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+        "uid": "${DS_INFLUXDB}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2285,7 +2302,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "b9be111f-30c3-4041-86c8-2a99cd9d3599"
+            "uid": "${DS_INFLUXDB}"
           },
           "query": "import \"date\"\r\n\r\ngetStartTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> first()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\ngetFinishTime = (lapNumber) => {\r\n    row = from(bucket: \"${bucketName2}\")\r\n        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n        |> filter(fn: (r) => r[\"lap_time\"] == \"lap_number\")\r\n        |> filter(fn: (r) => r._value == int(v: lapNumber))\r\n        |> group()\r\n        |> last()\r\n        |> findRecord(fn: (key) => true, idx:0)\r\n    return row._time\r\n}\r\n\r\nstart_time = getStartTime(lapNumber: ${lap1})\r\nstart_time2 = getStartTime(lapNumber: ${lap2})\r\n\r\nhour1 = date.hour(t: start_time)\r\nminute1 = date.minute(t: start_time)\r\nsecond1 = date.second(t: start_time)\r\n\r\nhour2 = date.hour(t: start_time2)\r\nminute2 = date.minute(t: start_time2)\r\nsecond2 = date.second(t: start_time2)\r\n\r\nhours = hour2 - hour1\r\nminutes = minute2 - minute1\r\nseconds = second2 - second1\r\ntotal_sec = hours * 3600 + minutes * 60 + seconds\r\ntimeshift = duration(v: total_sec)\r\n\r\nsecondos = total_sec * 1000000000\r\ntest2 = duration(v: uint(v: secondos))\r\n\r\nfrom(bucket: \"${bucketName2}\")\r\n  |> range(start: getStartTime(lapNumber: ${lap2}), stop: getFinishTime(lapNumber: ${lap2}))\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"delta\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)\r\n  |> timeShift(duration: -test2)",
           "refId": "A"
