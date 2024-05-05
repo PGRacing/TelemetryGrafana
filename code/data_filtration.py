@@ -12,14 +12,14 @@ class GPSKalman:
         self.timestep = 0.04 # in racebox
         self.speed_one_lap_container = []
 
-    def init_kalman(self):
+    def init_kalman(self, lat, lon):
         for i in range(2):
             self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
             if i == 0:
-                self.f[i].x = np.array([[54.1784337], 
+                self.f[i].x = np.array([[lat], 
                                         [0.]])  # initial state (position and velocity)
             elif i == 1:
-                self.f[i].x = np.array([[18.7130442], 
+                self.f[i].x = np.array([[lon], 
                                         [0.]])
             
             self.f[i].F = np.array([[1., self.timestep], 
@@ -32,6 +32,8 @@ class GPSKalman:
         
     
     def filter_gps(self, lat:float, lon:float, signal_loss:bool):
+        if type(self.f[0]) == int:
+            self.init_kalman(lat, lon)
         for i in range(2):
             self.f[i].predict()
         if not signal_loss:
@@ -190,37 +192,37 @@ class GYROKalman:
             self.f[1].update(gyro_y)
             self.f[2].update(gyro_z)
 
-        #return self.f
 
 
 
 class TEMPKalman:
     def __init__(self) -> None:
+
         self.f = list(range(6))
         self.var = 0.5 * 0.0003
         self.var_cooling = 1.
         self.timestep = 1.004987702853438
 
-    def init_kalman(self):
+    def init_kalman(self, engine_in, engine_out, left_in, left_out, right_in, right_out):
         for i in range(6):
             self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
             if i == 0:
-                self.f[i].x = np.array([[0.], 
-                                        [0.]])  # initial state (position and velocity)
+                self.f[i].x = np.array([[engine_in], 
+                                        [0.]])
             elif i == 1:
-                self.f[i].x = np.array([[0.], 
+                self.f[i].x = np.array([[engine_out], 
                                         [0.]])
             elif i == 2:
-                self.f[i].x = np.array([[0.],
+                self.f[i].x = np.array([[left_in],
                                         [0.]])
             elif i == 3:
-                self.f[i].x = np.array([[0.], 
+                self.f[i].x = np.array([[left_out], 
                                         [0.]])
             elif i == 4:
-                self.f[i].x = np.array([[0.], 
+                self.f[i].x = np.array([[right_in], 
                                         [0.]])
             elif i == 5:
-                self.f[i].x = np.array([[0.], 
+                self.f[i].x = np.array([[right_out], 
                                         [0.]])
             
             self.f[i].F = np.array([[1., self.timestep], 
@@ -232,6 +234,8 @@ class TEMPKalman:
             self.f[i].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var)  # process noise
 
     def filter_temperature(self, engine_in, engine_out, lr_in, lr_out, rr_in, rr_out):
+        if type(self.f[0]) == int:
+            self.init_kalman(engine_in, engine_out, lr_in, lr_out, rr_in, rr_out)
         for i in range(6):
             self.f[i].predict()
         self.f[0].update(engine_in)
