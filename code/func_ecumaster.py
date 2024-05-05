@@ -2,97 +2,12 @@ import csv
 import datetime
 import numpy as np
 from conf_influxdb import *
-
-volumetric_efficiency_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/volumetric_efficiency.csv'
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-09 Pszczolki/ecumaster/'
-cooling_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-09 Pszczolki/cooling/'
-cooling_first_matching_hour = 'cooling_system_temp_12_29_42.csv'
+from heat import *
 
 
-def find_closest(array, value):
-    array = np.array(array)
-    array = array.astype(float)
-    idx = (np.abs(array - value)).argmin()
-    return idx
-
-
-class EngineHeat:
-    water_flow = [0, 0.206, 0.350, 0.493, 0.452]  # kg/s
-    water_flow_RPM = [0, 2700, 4200, 6200, 9200]
-    water_heat_capacity = 4.184  # kJ/(kg*K)
-
-    def __init__(self) -> None:
-        self.engine_map = []
-        self.map_values = []
-        self.tps_values = []
-        for i in range(10, 101, 10):
-            self.tps_values.append([i, 0])
-        self.tps_values_percentage = []
-        for i in range(10, 101, 10):
-            self.tps_values_percentage.append([i, 0])
-        with open(volumetric_efficiency_path, 'r') as file:
-            csvreader = csv.reader(file)
-            for row in csvreader:
-                self.engine_map.append(row)
-        for i in range(1, len(self.engine_map[0])):
-            self.map_values.append(self.engine_map[0][i])
-        self.rpm_values = [x[0] for x in self.engine_map[1:]]
-        self.heat_to_cooling_system = 0.29
-        self.air = 14.7
-        self.fuel = 1.2
-        self.air_fuel_sum = 15.9
-        self.air_desnity = 1.25  # kg/m^3
-        self.air_volume_engine = 675.  # cm^3
-        self.air_volume_cylinder = 0.000225  # m^3
-        self.fuel_density = 770.  # kg/m^3
-        self.air_mass = self.air_desnity * self.air_volume_cylinder  # kg
-        self.fuel_mass = self.air_mass / self.air_fuel_sum  # kg
-        self.volume_flowing_through_injector = 0.00025  # m^3/min
-        self.mass_flow_through_the_injector = self.volume_flowing_through_injector * self.fuel_density  # kg/min
-        self.injection_opening_time = self.fuel_mass / self.mass_flow_through_the_injector  # min
-
-    def get_heat(self, rpm: int, map: int):
-        closest_map_index = int(find_closest(self.map_values, map))
-        closest_rpm_index = int(find_closest(self.rpm_values, rpm))
-        volumetric_eff = float(self.engine_map[closest_rpm_index][closest_map_index])
-        closest_rpm = float(self.rpm_values[closest_rpm_index])
-
-        heat = (volumetric_eff / 100.0 * self.injection_opening_time * self.mass_flow_through_the_injector) * (
-                    (closest_rpm * 3 / 2) / 60) * 43000 * self.heat_to_cooling_system
-
-
-        # print(f'rpm: {closest_rpm}, map: {closest_map}, volumetric efficiency: {volumetric_eff}, heat: {heat}')
-
-        return heat
-
-    def get_telemetry_engine_heat(self, rpm, engine_temp_delta):
-        if rpm == 0 or engine_temp_delta <= 0 :
-            return 0
-        interpolated_water_flow = np.interp(rpm, self.water_flow_RPM, self.water_flow)
-        heat = engine_temp_delta * interpolated_water_flow * self.water_heat_capacity
-        return heat
-    
-    def update_tps_list(self, tps):
-        for i in range(len(self.tps_values)):
-            if tps <= self.tps_values[i][0]:
-                self.tps_values[i][1] += 1
-                break
-
-    
-    def calc_tps_values_percentage(self):
-        number_of_records = 0
-        for pair in self.tps_values:
-            number_of_records += pair[1]
-        for i in range(len(self.tps_values_percentage)):
-            self.tps_values_percentage[i][1] = self.tps_values[i][1]/number_of_records*100
-        self.tps_values_percentage[9][0] = 99
-
-    def match_range(self, tps):
-        for i in range(len(self.tps_values)):
-            if tps <= self.tps_values[i][0]:
-                self.tps_values[i][1] += 1
-                #print(self.tps_values[i][0])
-                return self.tps_values[i][0]
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/ecumaster/'
+cooling_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/cooling/'
+cooling_first_matching_hour = 'cooling_system_temp_10_31_45.csv'
 
 
 def find_start_time(filename):
@@ -110,8 +25,6 @@ def find_start_time(filename):
 
 def find_first_closest_record(timestamp):
     for item in os.listdir(cooling_path):
-        #full_path = os.path.join(cooling_path, item)
-        #if os.path.isfile(full_path) and item.endswith('.csv'):
         engine_delta = open_file_find_value(item, timestamp)
         if engine_delta == -1000:
             continue
@@ -189,121 +102,122 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
         data = csv.DictReader(file, delimiter=';')
 
         for row in data:
-            second = float(row['TIME'].replace(',', '.'))
-            seconds_timedelta = datetime.timedelta(seconds=second)
-            timestamp = start_time + seconds_timedelta
-            ecumaster_timestamp = timestamp.timestamp() #- 3600. # in seconds
-            timestamp_grafana = timestamp - datetime.timedelta(hours=1)
+            if (float(row['MAP']) != 0 and float(row['CLT']) != 0):
+                second = float(row['TIME'].replace(',', '.'))
+                seconds_timedelta = datetime.timedelta(seconds=second)
+                timestamp = start_time + seconds_timedelta
+                ecumaster_timestamp = timestamp.timestamp() #- 3600. # in seconds
+                timestamp_grafana = timestamp - datetime.timedelta(hours=1)
 
-            if not first_timestamp_match:
-                diff = abs(ecumaster_timestamp - first_cooling_timestamp)
-                if diff < 1.1:
-                    first_match_row_number = row_counter
-                    engine_delta, last_used_file = find_first_closest_record(first_cooling_timestamp)
-                    first_timestamp_match = True
+                if not first_timestamp_match:
+                    diff = abs(ecumaster_timestamp - first_cooling_timestamp)
+                    if diff < 1.1:
+                        first_match_row_number = row_counter
+                        engine_delta, last_used_file = find_first_closest_record(first_cooling_timestamp)
+                        first_timestamp_match = True
 
 
-            theoretical_heat = engine_heat.get_heat(int(row['RPM']), int(row['MAP']))
-            #engine_heat.update_tps_list(int(row['TPS']))
-            tps_range = engine_heat.match_range(int(row['TPS']))
+                theoretical_heat = engine_heat.get_heat(int(row['RPM']), int(row['MAP']))
+                #engine_heat.update_tps_list(int(row['TPS']))
+                tps_range = engine_heat.match_range(int(row['TPS']))
 
-            #if (row_counter + first_match_row_number) % 25 == 0:
-                #print('podzielne linijki')
-            # 1 second passes
-            if first_timestamp_match and (row_counter + first_match_row_number) % 25 == 0:
-                # find proper values from cooling systam data
-                engine_delta, last_used_file = find_closest_record(ecumaster_timestamp, last_used_file, file_index+file_counter-1, cooling_list)
-                heat_from_engine = engine_heat.get_telemetry_engine_heat(int(row['RPM']), engine_delta)
-                if heat_from_engine < 0:
-                    print('ERROR, heat less than 0')
-                    print(engine_delta)
-                    #print()
+                #if (row_counter + first_match_row_number) % 25 == 0:
+                    #print('podzielne linijki')
+                # 1 second passes
+                if first_timestamp_match and (row_counter + first_match_row_number) % 25 == 0:
+                    # find proper values from cooling systam data
+                    engine_delta, last_used_file = find_closest_record(ecumaster_timestamp, last_used_file, file_index+file_counter-1, cooling_list)
+                    heat_from_engine = engine_heat.get_telemetry_engine_heat(int(row['RPM']), engine_delta)
+                    if heat_from_engine < 0:
+                        print('ERROR, heat less than 0')
+                        print(engine_delta)
+                        #print()
+
+                    point = (
+                        Point('engine')
+                        .tag("engine", 'heat')
+                        .field("heat_from_engine", float(heat_from_engine))
+                        .time(timestamp_grafana)
+                    )
+                    points.append(point)
+
+                point = (
+                    Point('engine')
+                    .tag("value", 'range')
+                    .field("TPS", tps_range)
+                    .time(timestamp_grafana)
+                )
+                points.append(point)
 
                 point = (
                     Point('engine')
                     .tag("engine", 'heat')
-                    .field("heat_from_engine", float(heat_from_engine))
+                    .field("heat_theoretical", theoretical_heat)
                     .time(timestamp_grafana)
                 )
                 points.append(point)
 
-            point = (
-                Point('engine')
-                .tag("value", 'range')
-                .field("TPS", tps_range)
-                .time(timestamp_grafana)
-            )
-            points.append(point)
-
-            point = (
-                Point('engine')
-                .tag("engine", 'heat')
-                .field("heat_theoretical", theoretical_heat)
-                .time(timestamp_grafana)
-            )
-            points.append(point)
-
-            point = (
-                Point('engine')
-                .tag("engine", 'raw')
-                .field("MAP", int(row['MAP']))
-                .time(timestamp_grafana)
-            )
-            points.append(point)
-
-            point = (
-                Point('engine')
-                .tag("engine", 'raw')
-                .field("RPM", int(row['RPM']))
-                .time(timestamp_grafana)
-            )
-            points.append(point)
-
-            point = (
-                Point('engine')
-                .tag("engine", 'raw')
-                .field("TPS", int(row['TPS']))
-                .time(timestamp_grafana)
-            )
-            points.append(point)
-
-            try:
                 point = (
                     Point('engine')
                     .tag("engine", 'raw')
-                    .field("Coolant fan", int(row['Coolant fan']))
+                    .field("MAP", int(row['MAP']))
                     .time(timestamp_grafana)
                 )
                 points.append(point)
-            except KeyError as e:
-                pass
-                
-            try:
+
                 point = (
                     Point('engine')
-                    .tag("oil", 'raw')
-                    .field("temp", int(row['Oil temperature']))
+                    .tag("engine", 'raw')
+                    .field("RPM", int(row['RPM']))
                     .time(timestamp_grafana)
                 )
                 points.append(point)
-            except KeyError as e:
-                pass
 
-            try:
                 point = (
                     Point('engine')
-                    .tag("ecumaster", 'raw')
-                    .field("clt", int(row['CLT']))
+                    .tag("engine", 'raw')
+                    .field("TPS", int(row['TPS']))
                     .time(timestamp_grafana)
                 )
                 points.append(point)
-            except KeyError as e:
-                pass
 
-            if row_counter % 900 == 0:
-                write_api.write(bucket=bucket, org=org, record=points)
-                points.clear()
-            row_counter += 1
+                try:
+                    point = (
+                        Point('engine')
+                        .tag("engine", 'raw')
+                        .field("Coolant fan", int(row['Coolant fan']))
+                        .time(timestamp_grafana)
+                    )
+                    points.append(point)
+                except KeyError as e:
+                    pass
+                    
+                try:
+                    point = (
+                        Point('engine')
+                        .tag("oil", 'raw')
+                        .field("temp", int(row['Oil temperature']))
+                        .time(timestamp_grafana)
+                    )
+                    points.append(point)
+                except KeyError as e:
+                    pass
+
+                try:
+                    point = (
+                        Point('engine')
+                        .tag("ecumaster", 'raw')
+                        .field("clt", int(row['CLT']))
+                        .time(timestamp_grafana)
+                    )
+                    points.append(point)
+                except KeyError as e:
+                    pass
+
+                if row_counter % 900 == 0:
+                    write_api.write(bucket=bucket, org=org, record=points)
+                    points.clear()
+                row_counter += 1
 
         LAST_TIMESTAMP = timestamp_grafana
         write_api.write(bucket=bucket, org=org, record=points)
@@ -340,10 +254,10 @@ if __name__ == "__main__":
     #scnds = '1710614428'
     #find_match(scnds)
     #LAST_TIMESTAMP = None
-    engine_heat = EngineHeat()
+    engine_heat = Heat()
     cooling_list = list_cooling_system_files(cooling_path) 
     find_files(path, cooling_list, engine_heat)
-    print(engine_heat.tps_values)
+    #print(engine_heat.tps_values)
     #points = []
     #engine_heat.calc_tps_values_percentage()
     #for i in range(len(engine_heat.tps_values_percentage)):
