@@ -663,7 +663,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": 10000,
+            "spanNulls": 60000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -722,7 +722,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "orange",
-                  "mode": "fixed"
+                  "mode": "shades"
                 }
               }
             ]
@@ -735,7 +735,7 @@
         "x": 0,
         "y": 8
       },
-      "id": 25,
+      "id": 27,
       "options": {
         "legend": {
           "calcs": [],
@@ -754,11 +754,11 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"CAN\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"0x609\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"flow_left\" or r[\"_field\"] == \"flow_right\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"CAN\")\r\n  |> filter(fn: (r) => r[\"ID\"] == \"0x609\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"flow_left\" or r[\"_field\"] == \"flow_right\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A"
         }
       ],
-      "title": "Water Flow ",
+      "title": "Water Flow",
       "type": "timeseries"
     },
     {
@@ -934,125 +934,6 @@
               "mode": "off"
             }
           },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 0
-                },
-                "1": {
-                  "color": "green",
-                  "index": 1
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 0.5
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Coolant fan raw"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "on/off"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 8
-      },
-      "id": 20,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.2.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"engine\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Coolant fan\")\r\n  |> filter(fn: (r) => r[\"engine\"] == \"raw\")\r\n  |> aggregateWindow(every: $__interval, fn: max)\r\n  |> map(fn: (r) => ({ r with _value: r._value == 1 }))",
-          "refId": "A"
-        }
-      ],
-      "title": "Coolant fan",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "${DS_INFLUXDB}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": 60000,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1113,8 +994,8 @@
       "gridPos": {
         "h": 8,
         "w": 8,
-        "x": 0,
-        "y": 16
+        "x": 16,
+        "y": 8
       },
       "id": 16,
       "options": {
@@ -1142,6 +1023,125 @@
         }
       ],
       "title": "Heat to cooling system [kJ/s]",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 60000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.5
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Coolant fan raw"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "on/off"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 16
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"engine\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Coolant fan\")\r\n  |> filter(fn: (r) => r[\"engine\"] == \"raw\")\r\n  |> aggregateWindow(every: $__interval, fn: max)\r\n  |> map(fn: (r) => ({ r with _value: r._value == 1 }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Coolant fan",
       "type": "timeseries"
     },
     {
@@ -1924,13 +1924,13 @@
     ]
   },
   "time": {
-    "from": "2024-04-29T21:53:52.475Z",
-    "to": "2024-04-29T22:10:01.523Z"
+    "from": "2024-04-29T21:48:24.201Z",
+    "to": "2024-04-29T22:16:17.921Z"
   },
   "timepicker": {},
   "timezone": "",
   "title": "2024-04-29 cooling system, ecumaster",
   "uid": "ae67093c-f889-42a7-81e8-ca8c0925045jxd",
-  "version": 15,
+  "version": 17,
   "weekStart": ""
 }

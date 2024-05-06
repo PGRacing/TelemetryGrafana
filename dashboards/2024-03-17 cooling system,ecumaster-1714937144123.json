@@ -12,7 +12,7 @@
       "name": "VAR_BUCKETNAME",
       "type": "constant",
       "label": "bucketName",
-      "value": "telemetry-2024-03-16",
+      "value": "telemetry-2024-03-17",
       "description": ""
     }
   ],
@@ -485,7 +485,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "in_delta7 engine"
+              "options": "in_delta engine"
             },
             "properties": [
               {
@@ -504,7 +504,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "out_delta7 engine"
+              "options": "out_delta engine"
             },
             "properties": [
               {
@@ -523,7 +523,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "in_delta7 radiator_l"
+              "options": "in_delta radiator_l"
             },
             "properties": [
               {
@@ -542,7 +542,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "out_delta7 radiator_l"
+              "options": "out_delta radiator_l"
             },
             "properties": [
               {
@@ -561,7 +561,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "in_delta7 radiator_r"
+              "options": "in_delta radiator_r"
             },
             "properties": [
               {
@@ -580,7 +580,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "out_delta7 radiator_r"
+              "options": "out_delta radiator_r"
             },
             "properties": [
               {
@@ -623,7 +623,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in_delta7\" or r[\"_field\"] == \"out_delta7\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in_delta\" or r[\"_field\"] == \"out_delta\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -1353,7 +1353,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1572,7 +1573,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1630,11 +1632,11 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": false,
   "schemaVersion": 38,
   "tags": [
     "PGR_07",
-    "Proto"
+    "Pszczółki"
   ],
   "templating": {
     "list": [
@@ -1660,13 +1662,13 @@
     ]
   },
   "time": {
-    "from": "2024-03-15T16:51:25.069Z",
-    "to": "2024-03-17T10:38:55.916Z"
+    "from": "2024-03-17T09:28:07.636Z",
+    "to": "2024-03-17T11:10:58.184Z"
   },
   "timepicker": {},
-  "timezone": "",
-  "title": "2024-03-16 cooling system, ecumaster",
-  "uid": "ae67093c-f889-42a7-81e8-ca8c0925045j",
-  "version": 6,
+  "timezone": "utc",
+  "title": "2024-03-17 cooling system,ecumaster",
+  "uid": "ae67093c-f889-42a7-81e8-ca8c0925045je",
+  "version": 7,
   "weekStart": ""
 }

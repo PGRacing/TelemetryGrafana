@@ -1,5 +1,5 @@
 {
-	"__inputs": [
+  "__inputs": [
     {
       "name": "DS_INFLUXDB",
       "label": "InfluxDB",
@@ -12,8 +12,29 @@
       "name": "VAR_BUCKETNAME",
       "type": "constant",
       "label": "bucketName",
-      "value": "telemetry-2023-11-05",
+      "value": "telemetry-2024-02-25",
       "description": ""
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.2.2"
+    },
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
     }
   ],
   "annotations": {
@@ -35,7 +56,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 2,
-  "id": 9,
+  "id": null,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -460,7 +481,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "in_delta7 engine"
+              "options": "in_delta engine"
             },
             "properties": [
               {
@@ -479,7 +500,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "out_delta7 engine"
+              "options": "out_delta engine"
             },
             "properties": [
               {
@@ -498,7 +519,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "in_delta7 radiator_l"
+              "options": "in_delta radiator_l"
             },
             "properties": [
               {
@@ -517,7 +538,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "out_delta7 radiator_l"
+              "options": "out_delta radiator_l"
             },
             "properties": [
               {
@@ -536,7 +557,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "in_delta7 radiator_r"
+              "options": "in_delta radiator_r"
             },
             "properties": [
               {
@@ -555,7 +576,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "out_delta7 radiator_r"
+              "options": "out_delta radiator_r"
             },
             "properties": [
               {
@@ -598,7 +619,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in_delta7\" or r[\"_field\"] == \"out_delta7\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
+          "query": "from(bucket: \"${bucketName}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"temp\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"in_delta\" or r[\"_field\"] == \"out_delta\")\r\n  |> filter(fn: (r) => r[\"temperature\"] == \"engine\" or r[\"temperature\"] == \"radiator_l\" or r[\"temperature\"] == \"radiator_r\")\r\n  |> aggregateWindow(every: $__interval, fn: mean)",
           "refId": "A"
         }
       ],
@@ -618,9 +639,21 @@
         "description": "",
         "hide": 2,
         "name": "bucketName",
-        "query": "telemetry-2024-02-25",
+        "query": "${VAR_BUCKETNAME}",
         "skipUrlSync": false,
-        "type": "constant"
+        "type": "constant",
+        "current": {
+          "value": "${VAR_BUCKETNAME}",
+          "text": "${VAR_BUCKETNAME}",
+          "selected": false
+        },
+        "options": [
+          {
+            "value": "${VAR_BUCKETNAME}",
+            "text": "${VAR_BUCKETNAME}",
+            "selected": false
+          }
+        ]
       }
     ]
   },
@@ -632,6 +665,6 @@
   "timezone": "",
   "title": "2024-02-25 cooling system",
   "uid": "b822889b-3a27-4958-9eca-fbb6ae69bf4f5",
-  "version": 18,
+  "version": 3,
   "weekStart": ""
 }

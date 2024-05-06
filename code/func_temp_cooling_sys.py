@@ -60,7 +60,8 @@ def open_file(filefullpath):
     row_counter = 0
     last_line_match = 0
 
-    can_file = match_file(file_counter)
+    if os.path.exists(folder_path_can):
+        can_file = match_file(file_counter)
 
     for row in csv_reader:
         if row_counter <= 2:

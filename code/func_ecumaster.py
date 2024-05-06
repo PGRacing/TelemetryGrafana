@@ -5,19 +5,16 @@ from conf_influxdb import *
 from heat import *
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/ecumaster/'
-cooling_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-17 Pszczolki/cooling/'
-cooling_first_matching_hour = 'cooling_system_temp_10_31_45.csv'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-04-30 proto - test can/ecumaster/'
+cooling_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-04-30 proto - test can/cooling/'
+cooling_first_matching_hour = 'cooling_system_temp_23_55_48.csv'
 
 
 def find_start_time(filename):
     year = int(filename[:4])
     month = int(filename[4:6])
     day = int(filename[6:8])
-    hour = int(filename[9:11])# - 1
-    if hour == -1:
-        day -= 1
-        hour = 23
+    hour = int(filename[9:11])
     minute = int(filename[11:13])
     second = int(filename[13:15])
     start_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
@@ -107,7 +104,7 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
                 seconds_timedelta = datetime.timedelta(seconds=second)
                 timestamp = start_time + seconds_timedelta
                 ecumaster_timestamp = timestamp.timestamp() #- 3600. # in seconds
-                timestamp_grafana = timestamp - datetime.timedelta(hours=1)
+                timestamp_grafana = timestamp - datetime.timedelta(hours=2)
 
                 if not first_timestamp_match:
                     diff = abs(ecumaster_timestamp - first_cooling_timestamp)
