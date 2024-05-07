@@ -12,7 +12,7 @@ from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-09 Pszczolki/racebox/'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-03-03 Pszczolki/racebox/'
 
 GFORCE =  9.80665 # m/s2
 TIMESTEP = 0.04 # s
@@ -26,6 +26,7 @@ var_acc = 0.
 total_km = 0.
 
 special_lap = []
+laps = []
 
 # to be set every track change
 approx_lon = 18.712
@@ -62,6 +63,7 @@ def open_file(filefullpath):
     global last_time
     global special_lap_acc
     global total_km
+    global laps
     
     with open(filefullpath, 'r') as file:
         lap_timer = LapTimer()
@@ -69,13 +71,14 @@ def open_file(filefullpath):
         acc_data = ACCKalman()
         gyro_data = GYROKalman()
         #time_loss = TimeLoss()
-        csvreader_object = csv.reader(file)
+        #csvreader_object = csv.reader(file)
         #for i in range (1, 13):
-            #next(csvreader_object)
+            #ext(csvreader_object)
         data = csv.DictReader(file)
         points = []
         startTime = datetime.now()
         row_counter = 0
+        lap_diff = 0
         inner_lap_counter = 0
         lap_duration_time = 0.
 
@@ -96,7 +99,7 @@ def open_file(filefullpath):
         vel_z = 0.
 
 
-        gps_data.init_kalman()
+        #gps_data.init_kalman()
         acc_data.init_kalman()
         gyro_data.init_kalman()
 
@@ -115,16 +118,28 @@ def open_file(filefullpath):
 
             timestamp = row['Time']
 
-    #vel_x = f_gps[0].x[1][0] * conv_rate_lon
-    #vel_y = f_gps[1].x[1][0] * conv_rate_lat
-
             if not row['Latitude'] or not row['Longitude']:
                 signal_loss_gps = True
             gps_data.filter_gps(float(row['Latitude']), float(row['Longitude']), signal_loss_gps)
 
+            if row_counter == 0:
+                lap_timer.init_position(x=gps_data.f[1].x[0][0], y=gps_data.f[0].x[0][0], time=timestamp)
+            else:
+                last_time, lap_diff, inner_lap_counter, lap_duration_time = lap_timer.check(x=gps_data.f[1].x[0][0], y=gps_data.f[0].x[0][0], timestamp=timestamp)
+                #prev_lap = lap_counter
+                lap_counter += lap_diff
+                #if prev_lap == 56 and lap_counter == 4 and lap_diff != 0:
+                    #print('maybe something here')
+            if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
+                    best_time = last_time
+                    best_lap_number = lap_counter
+
+            gps_data.avg_speed_per_lap(lap_counter, lap_diff, float(row['Speed']), timestamp, points)
+
             if not row['GForceX'] or not row['GForceY'] or not row['GForceZ']:
                 signal_loss_acc = True
             acc_data.filter_acc(GForceX, GForceY, GForceZ, signal_loss_acc)
+            acc_data.curve_detector(lap_counter,lap_diff, timestamp, points)
 
             if not gyro_x or not gyro_y or not gyro_z:
                 signal_loss_gyro = True
@@ -140,14 +155,7 @@ def open_file(filefullpath):
             f_acc = kalman_acc(f_acc, GForceX, GForceY, GForceZ, (f_gps[1].x[1][0] * conv_rate_lon), (f_gps[0].x[1][0] * conv_rate_lat), row_counter)
             f_gyro, yaw = kalman_gyro(f_gps, f_gyro, f_acc, gyro_x, gyro_y, gyro_z, row_counter, lon_prev, lat_prev, yaw)
             '''
-            if row_counter == 0:
-                lap_timer.init_position(x=gps_data.f[1].x[0][0], y=gps_data.f[0].x[0][0], time=timestamp)
-            else:
-                last_time, lap_diff, inner_lap_counter, lap_duration_time = lap_timer.check(x=gps_data.f[1].x[0][0], y=gps_data.f[0].x[0][0], timestamp=timestamp)
-                lap_counter += lap_diff
-            if (last_time < best_time and inner_lap_counter != 0) or lap_counter == 1:
-                    best_time = last_time
-                    best_lap_number = lap_counter
+            
             
             #loss = time_loss.calucate_gain_loss(gps_data.f[1].x[0][0], gps_data.f[0].x[0][0], lap_duration_time)
 
@@ -192,7 +200,7 @@ def open_file(filefullpath):
             point = (
                 Point('lap_times')
                 .tag("lap_time", 'last')
-                #.field("last_time", last_time)
+                .field("last_time", last_time)
                 .time(timestamp)
             )
             points.append(point)
@@ -396,6 +404,16 @@ def open_file(filefullpath):
             if row_counter % 300 == 0:
                 write_api.write(bucket=bucket, org=org, record=points)
                 points.clear()
+
+        #mean_gforce = acc_data.calc_avg_gforce()
+        #point = (
+        #    Point('force')
+        #    .tag('number', f'{file_counter}')
+        #    .field('mean_force', mean_gforce)
+        #    .time(timestamp)
+        #)
+        #points.append(point)
+
 
         write_api.write(bucket=bucket, org=org, record=points)
         endTime = datetime.now()
