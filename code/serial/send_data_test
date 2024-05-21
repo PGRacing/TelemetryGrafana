@@ -1,0 +1,16 @@
+import asyncio
+import websockets
+import json
+import datetime
+
+async def send_data():
+    uri = "ws://localhost:8091"
+    async with websockets.connect(uri) as websocket:
+        # Generate sample data
+        data = {
+            "timestamp": datetime.datetime.fromtimestamp(datetime.datetime.now()),
+            "value": 42  # Example value
+        }
+        await websocket.send(json.dumps(data))
+
+asyncio.get_event_loop().run_until_complete(send_data())
