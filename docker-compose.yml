@@ -20,10 +20,11 @@ services:
       - influxdb
     ports:
       - "3000:3000"
-  websocket:
+  websocket_server:
+    image: websocket_server
     build: ./code/serial
     ports:
-      - "8091:8091"
+      - "1627:1627"
 volumes:
   influxdb_data: {}
   grafana_data: {}
