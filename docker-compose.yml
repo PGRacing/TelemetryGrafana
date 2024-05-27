@@ -25,6 +25,13 @@ services:
     build: ./code/serial
     ports:
       - "1627:1627"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
 volumes:
   influxdb_data: {}
   grafana_data: {}

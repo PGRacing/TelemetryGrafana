@@ -3,6 +3,7 @@ import websockets
 import json
 import time
 import logging
+import random
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,7 +12,7 @@ async def send_data(websocket, path):
         # Generate sample data
         data = {
             "timestamp": time.time(),
-            "value": 42  # Example value
+            "value": random.randint(1,100)  # Example value
         }
         await websocket.send(json.dumps(data))
         await asyncio.sleep(1)  # Send data every second
