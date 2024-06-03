@@ -67,3 +67,28 @@ def import_csv_abs(filepath, start_time):
     endTime = datetime.datetime.now()
     file.close()
     print(f'ABS: Imported {line_count} rows in {endTime - startTime}')
+
+
+'''
+
+Reading data from logger.
+
+'''
+
+def abs_data(data, timestamp, prev_speed, points):
+    '''
+    prev_speed to tupla:
+    idex 0: left
+    index 1: right
+    
+    '''
+
+    # TODO decode data
+
+
+    (left_prev, right_prev) = prev_speed
+
+    speed_left = low_pass_filter(speed_left_raw*2.0, left_prev, low_pass_filter_alpha_4Hz)
+    speed_right = low_pass_filter(speed_right_raw*2.0, right_prev, low_pass_filter_alpha_4Hz)
+
+    

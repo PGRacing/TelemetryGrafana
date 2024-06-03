@@ -1,12 +1,13 @@
 import csv
+import sys
 import struct
 import datetime
 import base64
 from conf_influxdb import *
 from heat import *
 
-folder_path_can = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-04-30 proto - test can/can/'
-folder_path_cooling = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-04-30 proto - test can/cooling/'
+folder_path_can = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-05-14 Pszczolki/can/'
+folder_path_cooling = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-05-14 Pszczolki/cooling/'
 
 '''
 WIELKIE TODO 
@@ -14,6 +15,7 @@ WIELKIE TODO
 1. Reczne korekcje czasu można olać i na grafanie ustawić czas GMT (nie trzeba po zmianie czasu zmieniać na -2h/-1h)
 
 '''
+
 
 def find_can_files(folder_path):
     startProgram = datetime.datetime.now()
@@ -39,11 +41,13 @@ def import_csv_can(path, file_counter):
         for row in data:
             try:
                 float(row['timestamp'])
+                int(row['error'])
             except(ValueError, TypeError) as e:
                 continue
 
             timestamp = datetime.datetime.fromtimestamp(float(row['timestamp'])) - datetime.timedelta(hours=2)
             flow_left, flow_right = calc_flow_on_radiators(row['arbitration_id'], row['data'], int(row['error']))
+          #  flow_engine = calc_flow_on_radiators(row['arbitration_id'], row['data'], int(row['error']))
             #delta_l, delta_r, timestep, last_line_match = match_cooling_log(cooling_file, float(row['timestamp']), last_line_match)
             #if delta_l != -1 and delta_r != -1 and timestep != -1:
             #    left_radiator_heat = heat.calc_water_heat(delta_l, flow_left, timestep)
@@ -109,6 +113,13 @@ def calc_flow_on_radiators(arbitration_id, data, error):
     else:
         return -1, -1
     
+
+'''
+
+Matching with cooling files to falculate heat on radiators.
+
+'''
+    
 def match_file(desired_file_number):
     file_counter = 0
     for item in os.listdir(folder_path_can):
@@ -133,6 +144,41 @@ def match_cooling_log(cooling_file, timestamp, last_line_match):
                 except ValueError as e:
                     return -1, -1, -1, last_line_match
     return -1, -1, -1, last_line_match
+
+'''
+
+Functions to apply for reading from logger.
+
+'''
+
+def flow_data(data, timestamp, points):
+    '''
+    <   Little Endian Byte Order
+    H   unsigned short (uint16), first 2 bytes
+    H   unsigned short (uint16), next 2 bytes
+    '''
+    left, right = struct.unpack('<HH', data)
+    left /= 32.
+    right /= 32.
+
+    point = (
+        Point('CAN')
+        .tag("ID", 'flow')
+        .field("flow_right", right)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('CAN')
+        .tag("ID", 'flow')
+        .field("flow_left", left)
+        .time(timestamp)
+    )
+    points.append(point)
+
+
+    return left, right
 
 
 

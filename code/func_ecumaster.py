@@ -3,11 +3,12 @@ import datetime
 import numpy as np
 from conf_influxdb import *
 from heat import *
+from func_temp_cooling_sys import *
 
 
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-04-30 proto - test can/ecumaster/'
-cooling_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-04-30 proto - test can/cooling/'
-cooling_first_matching_hour = 'cooling_system_temp_23_55_48.csv'
+path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-05-14 Pszczolki/ecumaster/'
+cooling_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/24-05-14 Pszczolki/cooling/'
+cooling_first_matching_hour = 'cooling_system_temp_16_07_58.csv'
 
 
 def find_start_time(filename):
@@ -77,6 +78,7 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
     global LAST_TIMESTAMP
     row_counter = 0
     first_match_row_number = 0
+    theoretical_heat_prev = 0
     #engine_heat = EngineHeat()
     points = []
     split_path = filepath.split("/")
@@ -100,43 +102,22 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
 
         for row in data:
             if (float(row['MAP']) != 0 and float(row['CLT']) != 0):
+                '''
+                Make a proper timestamp
+                '''
                 second = float(row['TIME'].replace(',', '.'))
                 seconds_timedelta = datetime.timedelta(seconds=second)
                 timestamp = start_time + seconds_timedelta
                 ecumaster_timestamp = timestamp.timestamp() #- 3600. # in seconds
                 timestamp_grafana = timestamp - datetime.timedelta(hours=2)
 
-                if not first_timestamp_match:
-                    diff = abs(ecumaster_timestamp - first_cooling_timestamp)
-                    if diff < 1.1:
-                        first_match_row_number = row_counter
-                        engine_delta, last_used_file = find_first_closest_record(first_cooling_timestamp)
-                        first_timestamp_match = True
-
+                '''
+                Calculate heat (excel) and derivative of a function and find tps range
+                '''
 
                 theoretical_heat = engine_heat.get_heat(int(row['RPM']), int(row['MAP']))
-                #engine_heat.update_tps_list(int(row['TPS']))
+                derivative_theoretical = calc_derivative(theoretical_heat, theoretical_heat_prev, 0.04)
                 tps_range = engine_heat.match_range(int(row['TPS']))
-
-                #if (row_counter + first_match_row_number) % 25 == 0:
-                    #print('podzielne linijki')
-                # 1 second passes
-                if first_timestamp_match and (row_counter + first_match_row_number) % 25 == 0:
-                    # find proper values from cooling systam data
-                    engine_delta, last_used_file = find_closest_record(ecumaster_timestamp, last_used_file, file_index+file_counter-1, cooling_list)
-                    heat_from_engine = engine_heat.get_telemetry_engine_heat(int(row['RPM']), engine_delta)
-                    if heat_from_engine < 0:
-                        print('ERROR, heat less than 0')
-                        print(engine_delta)
-                        #print()
-
-                    point = (
-                        Point('engine')
-                        .tag("engine", 'heat')
-                        .field("heat_from_engine", float(heat_from_engine))
-                        .time(timestamp_grafana)
-                    )
-                    points.append(point)
 
                 point = (
                     Point('engine')
@@ -149,7 +130,15 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
                 point = (
                     Point('engine')
                     .tag("engine", 'heat')
-                    .field("heat_theoretical", theoretical_heat)
+                    .field("heat_theoretical_new_map", theoretical_heat)
+                    .time(timestamp_grafana)
+                )
+                points.append(point)
+
+                point = (
+                    Point('engine')
+                    .tag("engine", 'heat')
+                    .field("derivative", derivative_theoretical)
                     .time(timestamp_grafana)
                 )
                 points.append(point)
@@ -169,6 +158,7 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
                     .time(timestamp_grafana)
                 )
                 points.append(point)
+
 
                 point = (
                     Point('engine')
@@ -215,6 +205,7 @@ def import_csv_heat(filepath, engine_heat, cooling_list, file_counter):
                     write_api.write(bucket=bucket, org=org, record=points)
                     points.clear()
                 row_counter += 1
+                theoretical_heat_prev = theoretical_heat
 
         LAST_TIMESTAMP = timestamp_grafana
         write_api.write(bucket=bucket, org=org, record=points)
@@ -247,24 +238,132 @@ def find_match(seconds):
                     print(item)
                     break
 
+
+
+
+'''
+
+For logger reading.
+
+'''
+
+def engine_data1(data, timestamp, theoretical_heat_prev, points):
+
+    # TODO deocde bytes
+    '''
+    <   Little Endian Byte Order
+    H   unsigned 16 bits
+    B   unsigned 8 bits
+    b   signed 8 bits
+    '''
+    rpm, tps, iat, map, injpw = struct.unpack('<HBbHH', data)
+    tps *= 0.5
+
+    theoretical_heat = engine_heat.get_heat(rpm, map)
+    derivative_theoretical = calc_derivative(theoretical_heat, theoretical_heat_prev, 0.04)
+    tps_range = engine_heat.match_range(tps)
+
+    point = (
+        Point('engine')
+        .tag("value", 'range')
+        .field("TPS", tps_range)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('engine')
+        .tag("engine", 'heat')
+        .field("heat_theoretical_new_map", theoretical_heat)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('engine')
+        .tag("engine", 'heat')
+        .field("derivative", derivative_theoretical)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('engine')
+        .tag("engine", 'raw')
+        .field("MAP", map)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('engine')
+        .tag("engine", 'raw')
+        .field("RPM", rpm)
+        .time(timestamp)
+    )
+    points.append(point)
+
+
+    point = (
+        Point('engine')
+        .tag("engine", 'raw')
+        .field("TPS", tps)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    return theoretical_heat
+
+
+def engine_data2(data, timestamp, points):
+
+    vspd, baro, oil_temperature, oil_preassure, fuelp, clt = struct.unpack('<HBBBBh', data)
+    clt -= 40
+    oil_preassure *= 0.0625
+
+    point = (
+        Point('engine')
+        .tag("oil", 'raw')
+        .field("temp", oil_temperature)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('engine')
+        .tag("oil", 'raw')
+        .field("preassure", oil_preassure)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    point = (
+        Point('engine')
+        .tag("ecumaster", 'raw')
+        .field("clt", clt)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    return clt
+
+def engine_data6(data, timestamp, points):
+
+    ain5, ain6, outflags1, outflags2, outflags3, outflags4 = struct.unpack('<HHBBBB', data)
+    outflags4_bits = ((outflags4 >> bit) & 1 for bit in range(8))
+    (fps, coolant_fan, ac_clutch, ac_fan, nitrous, starter_req, boost_map_state) = outflags4_bits
+
+    point = (
+        Point('engine')
+        .tag("engine", 'raw')
+        .field("Coolant fan", coolant_fan)
+        .time(timestamp)
+    )
+    points.append(point)
+
+    
+
 if __name__ == "__main__":
-    #scnds = '1710614428'
-    #find_match(scnds)
-    #LAST_TIMESTAMP = None
     engine_heat = Heat()
     cooling_list = list_cooling_system_files(cooling_path) 
     find_files(path, cooling_list, engine_heat)
-    #print(engine_heat.tps_values)
-    #points = []
-    #engine_heat.calc_tps_values_percentage()
-    #for i in range(len(engine_heat.tps_values_percentage)):
-        #point = (
-            #Point('engine')
-            #.tag("TPS", f'{engine_heat.tps_values_percentage[i][0]}%')
-            #.field("TPS_percentage", float(engine_heat.tps_values_percentage[i][1]))
-            #.time(LAST_TIMESTAMP)
-        #)
-        #points.append(point)
-    #write_api.write(bucket=bucket, org=org, record=points)
-
-
