@@ -2,7 +2,7 @@ import csv
 import numpy as np
 from func_can import *
 
-volumetric_efficiency_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/volumetric_efficiency.csv'
+volumetric_efficiency_path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/volumetric_efficiency2.csv'
 
 def find_closest(array, value):
     array = np.array(array)
@@ -112,5 +112,6 @@ class Heat:
             return heat
         return 0.
     
+
     
     
