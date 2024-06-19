@@ -164,7 +164,7 @@ def flow_data(data, timestamp, points):
     point = (
         Point('CAN')
         .tag("ID", 'flow')
-        .field("flow_right", right)
+        .field("flow_right_radiator", right)
         .time(timestamp)
     )
     points.append(point)
@@ -172,7 +172,7 @@ def flow_data(data, timestamp, points):
     point = (
         Point('CAN')
         .tag("ID", 'flow')
-        .field("flow_left", left)
+        .field("flow_left_radiator", left)
         .time(timestamp)
     )
     points.append(point)
@@ -180,6 +180,27 @@ def flow_data(data, timestamp, points):
 
     return left, right
 
+
+'''
+Live telemetry.
+'''
+def flow_data_live(data, timestamp):
+    '''
+    <   Little Endian Byte Order
+    H   unsigned short (uint16), first 2 bytes
+    H   unsigned short (uint16), next 2 bytes
+    '''
+    left, right = struct.unpack('<HH', data)
+    left /= 32.
+    right /= 32.
+
+    data_to_send = {
+        "timestamp": timestamp,
+        "flow_right_radiator": left,
+        "flow_left_radiator": right,
+    }
+
+    return data_to_send
 
 
 

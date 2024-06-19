@@ -353,8 +353,8 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'engine')
-        .field("out", temperature.f[1].x[0][0])
-        .field("out_delta", temperature.f[1].x[1][0]*60)
+        .field("engine_out", temperature.f[1].x[0][0])
+        .field("engine_out_rise", temperature.f[1].x[1][0]*60)
         .time(timestamp)
     )
     points.append(point)
@@ -362,8 +362,8 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'engine')
-        .field("in", temperature.f[0].x[0][0])
-        .field("in_delta", temperature.f[0].x[1][0]*60)
+        .field("engine_in", temperature.f[0].x[0][0])
+        .field("engine_in_rise", temperature.f[0].x[1][0]*60)
         .time(timestamp)
     )
     points.append(point)
@@ -371,7 +371,7 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'engine')
-        .field("delta", engine_delta)
+        .field("engine_delta", engine_delta)
         .time(timestamp)
     )
     points.append(point)
@@ -379,8 +379,8 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'radiator_l')
-        .field("in", temperature.f[2].x[0][0])
-        .field("in_delta", temperature.f[2].x[1][0]*60)
+        .field("left_radiator_in", temperature.f[2].x[0][0])
+        .field("left_radiator_in_rise", temperature.f[2].x[1][0]*60)
         .time(timestamp)
     )
     points.append(point)
@@ -388,8 +388,8 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'radiator_l')
-        .field("out", temperature.f[3].x[0][0])
-        .field("out_delta", temperature.f[3].x[1][0]*60)
+        .field("left_radiator_out", temperature.f[3].x[0][0])
+        .field("left_radiator_out_rise", temperature.f[3].x[1][0]*60)
         .time(timestamp)
     )
     points.append(point)
@@ -397,7 +397,7 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'radiator_l')
-        .field("delta", left_radiator_delta)
+        .field("left_radiator_delta", left_radiator_delta)
         .time(timestamp)
     )
     points.append(point)
@@ -405,8 +405,8 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'radiator_r')
-        .field("in", temperature.f[4].x[0][0])
-        .field("in_delta", temperature.f[4].x[1][0]*60)
+        .field("right_radiator_in", temperature.f[4].x[0][0])
+        .field("right_radiator_in_rise", temperature.f[4].x[1][0]*60)
         .time(timestamp)
     )
     points.append(point)
@@ -414,8 +414,8 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'radiator_r')
-        .field("out", temperature.f[5].x[0][0])
-        .field("out_delta", temperature.f[5].x[1][0]*60)
+        .field("right_radiator_out", temperature.f[5].x[0][0])
+        .field("right_radiator_out_rise", temperature.f[5].x[1][0]*60)
         .time(timestamp)
     )
     points.append(point)
@@ -423,7 +423,7 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('temp')
         .tag("temperature", 'radiator_r')
-        .field("delta", right_radiator_delta)
+        .field("right_radiator_delta", right_radiator_delta)
         .time(timestamp)
     )
     points.append(point)
@@ -431,7 +431,7 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('engine')
         .tag("radiator", 'heat')
-        .field('right', right_heat)
+        .field('right_radiator_heat', right_heat)
         .time(timestamp)
     )
     points.append(point)
@@ -439,7 +439,7 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('engine')
         .tag("radiator", 'heat')
-        .field('left', left_heat)
+        .field('left_radiator_heat', left_heat)
         .time(timestamp)
     )
     points.append(point)
@@ -447,31 +447,65 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
     point = (
         Point('engine')
         .tag("radiator", 'heat')
-        .field('derivative_r', heat_radiators_derivative)
+        .field('radiators_heat_rise', heat_radiators_derivative)
         .time(timestamp)
     )
     points.append(point)
 
-    if ecumaster_match:
-        point = (
-            Point('engine')
-            .tag("radiator", 'heat')
-            .field('engine', engine_heat)
-            .time(timestamp)
-        )
-        points.append(point)
 
+'''
+Live telemetry.
+'''
 
-        point = (
-            Point('engine')
-            .tag("radiator", 'heat')
-            .field('derivative_e', heat_engine_derivative)
-            .time(timestamp)
-        )
-        points.append(point)
+def cooling_data_live(data, timestamp, heat, temperature, flow, clt, heat_prev_values):
+    # TODO decode data
 
+    ''' radiators and engine temperature '''
 
+    temperature.filter_temperature(engine_in, engine_out, radiator_l_in, radiator_l_out, radiator_r_in, radiator_r_out)
 
+    engine_delta = temperature.f[1].x[0][0] - temperature.f[0].x[0][0]
+    left_radiator_delta = temperature.f[3].x[0][0] - temperature.f[2].x[0][0]
+    right_radiator_delta = temperature.f[5].x[0][0] - temperature.f[4].x[0][0]
+
+    ''' heat based on temperature delta '''
+
+    (flow_left, flow_right) = flow
+    (heat_left_prev, heat_right_prev, heat_engine_prev) = heat_prev_values
+
+    left_heat = heat.calc_water_heat(abs(left_radiator_delta), flow_left)
+    right_heat = heat.calc_water_heat(abs(right_radiator_delta), flow_right)
+    engine_heat = heat.calc_water_heat(clt - (temperature.f[5].x[0][0] + temperature.f[3].x[0][0])/2, flow_right + flow_left)
+    heat_radiators_derivative = calc_derivative(left_heat+right_heat, heat_right_prev+heat_left_prev, 1)
+    heat_engine_derivative = calc_derivative(engine_heat, heat_engine_prev, 1)
+
+    data_to_send = {
+        "timestamp": timestamp,
+
+        "engine_out_temperature": temperature.f[1].x[0][0],
+        "engine_out_temp_rise": temperature.f[1].x[1][0]*60,
+        "engine_in_temperature": temperature.f[0].x[0][0],
+        "engine_in_temp_rise": temperature.f[0].x[1][0]*60,
+        "engine_temperature_delta": engine_delta,
+
+        "left_radiator_in_temperature": temperature.f[2].x[0][0],
+        "left_radiator_in_temp_rise": temperature.f[2].x[1][0]*60,
+        "left_radiator_out_temperature": temperature.f[3].x[0][0],
+        "left_radiator_out_temp_rise": temperature.f[3].x[1][0]*60,
+        "left_radiator_delta": left_radiator_delta,
+
+        "right_radiator_in_temperature": temperature.f[4].x[0][0],
+        "right_radiator_in_temp_rise": temperature.f[4].x[1][0]*60,
+        "right_radiator_out_temperature": temperature.f[5].x[0][0],
+        "right_radiator_out_temp_rise": temperature.f[5].x[1][0]*60,
+        "right_radiator_delta": right_radiator_delta,
+
+        'right_radiator_heat': right_heat,
+        'left_radiator_heat': left_heat,
+        'radiators_heat_rise': heat_radiators_derivative,
+    }
+
+    return data_to_send
 
 
 

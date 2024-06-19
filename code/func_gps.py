@@ -205,3 +205,29 @@ def convert_csv_gps(filepath):
            removed_lines += 1
   savefile.close()
   print(f'Removed {removed_lines} lines with wrong checksum from {filepath.split("/")[-1]}')
+
+
+  '''
+  live telemetry.
+  '''
+
+def gps_data(data, timestamp, filter):
+      
+    # TODO: decode data
+
+    lat = (float(lat) / 100 // 1) + (float(lat) % 100.0 / 60.0)
+    lon = (float(lon) / 100 // 1) + (float(lon) % 100.0 / 60.0)
+
+    if lat and lon:
+        filter.filter_gps(lat, lon, False)
+    else:
+        filter.filter_gps(0, 0, True)
+
+    data_to_send = {
+        "timestamp": timestamp,
+        "lat": filter[0].x[0][0],
+        "lon": filter[1].x[0][0],
+    }
+
+    return data_to_send
+      

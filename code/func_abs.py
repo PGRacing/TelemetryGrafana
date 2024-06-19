@@ -75,20 +75,75 @@ Reading data from logger.
 
 '''
 
-def abs_data(data, timestamp, prev_speed, points):
+def abs_data(data, timestamp, prev_speed, if_front, points):
     '''
     prev_speed to tupla:
     idex 0: left
     index 1: right
+
+    if_front: True if front, False if rear
     
     '''
 
     # TODO decode data
 
+    match if_front:
+        case True:
+            if_front = 'front'
+        case False:
+            if_front = 'rear'
+
 
     (left_prev, right_prev) = prev_speed
 
-    speed_left = low_pass_filter(speed_left_raw*2.0, left_prev, low_pass_filter_alpha_4Hz)
-    speed_right = low_pass_filter(speed_right_raw*2.0, right_prev, low_pass_filter_alpha_4Hz)
+    speed_left = low_pass_filter(left_prev*2.0, left_prev, low_pass_filter_alpha_4Hz)
+    speed_right = low_pass_filter(right_prev*2.0, right_prev, low_pass_filter_alpha_4Hz)
+
+    point = (
+        Point('abs')
+        .tag("ID", if_front)
+        .field(f"speed_{if_front}_left", speed_left)
+        .field(f"speed_{if_front}_right", speed_right)
+        .time(timestamp)
+    )
+    points.append(point)
+
+
+'''
+Live telemetry
+'''
+def abs_data_live(data, timestamp, prev_speed, if_front):
+    '''
+    prev_speed to tupla:
+    idex 0: left
+    index 1: right
+
+    if_front: True if front, False if rear
+    
+    '''
+
+    # TODO decode data
+
+    match if_front:
+        case True:
+            if_front = 'front'
+        case False:
+            if_front = 'rear'
+
+
+    (left_prev, right_prev) = prev_speed
+
+    speed_left = low_pass_filter(left_prev*2.0, left_prev, low_pass_filter_alpha_4Hz)
+    speed_right = low_pass_filter(right_prev*2.0, right_prev, low_pass_filter_alpha_4Hz)
+
+    data_to_send = {
+        "timestamp": timestamp,
+        f"{if_front}_left_speed": speed_left,
+        f"{if_front}_right_speed": speed_right,
+    }
+
+    return data_to_send
+
+
 
     

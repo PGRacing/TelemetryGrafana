@@ -6,6 +6,7 @@ from damp_ang_to_pos import *
 
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
+from data_filtration import DAMPKalman
 import numpy as np
 
 DAMPER_MIN_ANGLE = 0.0
@@ -99,7 +100,7 @@ def import_csv_damp(filepath, start_time, time_coefficients):
 
         if line_count == 0:
             damp_data.init_kalman()
-        data = filter_data(calc_wheel_position(row), row["ID"], damp_data)
+        data = filter_data_old(calc_wheel_position_old(row), row["ID"], damp_data)
         if row["ID"] != '6':
             position = damp_data.find_velocity_range(data[1])
             if position <= 0:
@@ -190,7 +191,7 @@ def setup_kalman_filter():
         f[i].Q = Q_discrete_white_noise(dim=2, dt=0.004, var=var_a)  # process noise
 
 
-def filter_data(data, ID, damp_data):
+def filter_data_old(data, ID, damp_data):
     index = -1
     match int(ID):
         case 7:
@@ -212,9 +213,10 @@ def filter_data(data, ID, damp_data):
         return float(damp_data.f[index].x[0][0]), float(damp_data.f[index].x[1][0])
     else:
         return data, 0.0
+    
 
 
-def calc_wheel_position(row):
+def calc_wheel_position_old(row):
     raw_value = float(int(row["delta"]))
     angle_abs = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, raw_value / 4095)
     angle = 0.0
@@ -256,79 +258,108 @@ def calc_wheel_position(row):
 
     return position
 
+'''
 
-class DAMPKalman:
-    def __init__(self) -> None:
-        self.f = list(range(5))
-        self.var = 0.5 * 530
-        self.var_damp = 0.014 
-        self.timestep = 0.004 
-        self.bump = [] 
-        self.rebound = []
-        self.damp_vel_percentage = []
-        for i in range(10, 80, 10):
-            self.bump.append([i, 0])
-        for i in range(-70, 10, 10):
-            self.rebound.append([i, 0])
-            #self.damp_vel_percentage.append([i, 0])
+Function to call for data from logger.
 
-    def init_kalman(self):
-        for i in range(5):
-            self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
-            self.f[i].x = np.array([[0.], 
-                                    [0.]])  # initial state (position and velocity)
-            self.f[i].F = np.array([[1., self.timestep], 
-                                    [0., 1.]])  # state transition matrix
-            self.f[i].H = np.array([[1., 0.]])  # Measurement function
-            self.f[i].P = np.array([[10., 0.], 
-                                    [0., 10.]])  # covariance matrix
-            self.f[i].R = np.array([[self.var_damp]])  # measurement noise
-            self.f[i].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var)  # process noise
+'''
 
+
+def damp_data(data, id, position, timestamp, points):
+    # position is a string - "front", "rear"
+
+    # TODO: decode data
+
+    position_left = filter_data(calc_wheel_position(delta_left, id), 0, delta_left)
+    position_right = filter_data(calc_wheel_position(delta_right, id), 1, delta_right)
+
+    point = (
+        Point('damp')
+        .tag("ID", position)
+        .field(f"angle_{position}_left", position_left[0])
+        .field(f"angle_{position}_right", position_right[0])
+        .time(timestamp)
+    )
+    points.append(point)
+
+    # wheel travel in m/s
+    point = (
+        Point('damp')
+        .tag("ID", position)
+        .field(f"speed_{position}_left", position_left[1])
+        .field(f"speed_{position}_right", position_right[1])
+        .time(timestamp)
+    )
+    points.append(point)
+
+
+def calc_wheel_position(delta, id):
+    angle_abs = lerp(DAMPER_MIN_ANGLE, DAMPER_MAX_ANGLE, delta / 4095)
+    angle = 0.0
+    position = 0.0
+
+    '''
+    IDs
+    7  FL Front Left
+    8  FR Front Right
+    11 RL Rear Left
+    12 RR Rear Right 
+    '''
+    match int(id):
+        case 7:
+            angle = -(angle_abs - REF_ANGLE_FL)
+        case 8:
+            angle = angle_abs - REF_ANGLE_FR
+        case 11:
+            angle = -(angle_abs - REF_ANGLE_RL)
+        case 12:
+            angle = (angle_abs - REF_ANGLE_RR)
+
+
+    if int(id) == 7 or int(id) == 8:
+        try:
+            damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_front(angle)
+        except IndexError:
+            pass
+    elif int(id) == 11 or int(id) == 12:
+        try:
+            damper_angle_to_pos_low, damper_angle_to_pos_high = find_closest_angles_back(angle)
+        except IndexError:
+            pass
+    try:
+        position = lerp(damper_angle_to_pos_low[0], damper_angle_to_pos_high[0],
+                        (angle - damper_angle_to_pos_low[1]) / (
+                                damper_angle_to_pos_high[1] - damper_angle_to_pos_low[1]))
+    except UnboundLocalError:
+        pass
+
+    return position
+
+def filter_data(data, index, damp_data):
+    ''' index 0 - left, 1 - right '''
+    if index != -1:
+        damp_data.filter_damp(index, data)
+
+        return float(damp_data.f[index].x[0][0]), float(damp_data.f[index].x[1][0])
+    else:
+        return data, 0.0
     
-    def filter_damp(self, index:int, value:float):
-        self.f[index].predict()
-        self.f[index].update(value)
-
-    def find_velocity_range(self, velocity):
-        # ugina się to prędkość na +
-        # odgina to -
-        if velocity < 0:
-            for i in range(len(self.rebound)):
-                if (velocity <= self.rebound[i][0]):
-                    return self.rebound[i][0]
-        else:
-            for i in range(len(self.bump)):
-                if (velocity <= self.bump[i][0]):
-                    return self.bump[i][0]
-            return self.bump[i][0]
-
-    def calc_damp_values_percentage(self):
-        number_of_records = 0
-        for pair in self.bound:
-            number_of_records += pair[1]
-        
-
 '''
-path = 'C:/Users/malwi/Documents/MEGA/PGRacingTeam/000 telemetry_data/23-11-05 Pszczolki/damp/'       
-if __name__ == '__main__':
-    damp_data = DAMPKalman()
-    temp_timestamp = datetime.datetime(year = 2023, month=11, day=5, hour=11)
-    for item in os.listdir(path):
-        full_path = os.path.join(path, item)
-
-        if os.path.isfile(full_path) and item.endswith('.csv'):
-            import_csv_damp(full_path, 0, damp_data)
-            if item == 'DAMP0101-33.csv':
-                damp_data.calc_damp_values_percentage()
-                points = []
-                for i in range(len(damp_data.damp_vel_percentage)):
-                    point = (
-                        Point('damp')
-                        .tag("range", f'{damp_data.damp_vel_percentage[i][0]}%')
-                        .field("percentage", float(damp_data.damp_vel_percentage[i][1]))
-                        .time(temp_timestamp)
-                    )
-                    points.append(point)
-                write_api.write(bucket=bucket, org=org, record=points)
+Live telemetry.
 '''
+
+def damp_data_live(data, id, position, timestamp):
+    # position is a string - "front", "rear"
+
+    # TODO: decode data
+
+    position_left = filter_data(calc_wheel_position(delta_left, id), 0, delta_left)
+    position_right = filter_data(calc_wheel_position(delta_right, id), 1, delta_right)
+
+    data_to_send = {
+        "timestamp": timestamp,
+        f"angle_{position}_left": position_left,
+        f"angle_{position}_left": position_right,
+    }
+
+    return data_to_send

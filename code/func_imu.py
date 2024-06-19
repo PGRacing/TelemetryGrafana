@@ -1,4 +1,5 @@
 import csv
+import struct
 from datetime import datetime
 from conf_influxdb import *
 from kalman_filters import *
@@ -116,3 +117,38 @@ def import_csv_imu(filepath, start_time, f_acc, f_gyro):
     print(f'IMU: Imported {line_count} rows in {endTime - startTime}')
 
     return f_acc, f_gyro
+
+
+'''
+TODO: Calculate variance for imu and gps
+'''
+
+def acc_data_live(data, timestamp, f_acc):
+
+    acc_x, acc_y, acc_z = struct.upack("<HHH", data)
+    if acc_x:
+        acc_x /= 128.
+        acc_y /= 128.
+        acc_z /= 128.
+
+        f_acc.filter_acc(acc_x, acc_y, acc_z, False)
+
+    else:
+        f_acc.filter_acc(acc_x, acc_y, acc_z, True)
+
+    data_to_send = {
+        "timestamp": timestamp,
+        "acc_x": f_acc[0].x[0][0],
+        "acc_y": f_acc[1].x[0][0],
+        "acc_z": f_acc[2].x[0][0]
+    }
+
+    return data_to_send
+
+
+
+if not row['GForceX'] or not row['GForceY'] or not row['GForceZ']:
+                signal_loss_acc = True
+            acc_data.filter_acc(GForceX, GForceY, GForceZ, signal_loss_acc)
+            acc_data.curve_detector(lap_counter,lap_diff, timestamp, points)
+    
