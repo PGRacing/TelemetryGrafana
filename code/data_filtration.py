@@ -1,6 +1,7 @@
 import math
 import numpy as np
-from filterpy.kalman import KalmanFilter
+import sympy as sp
+from filterpy.kalman import KalmanFilter, ExtendedKalmanFilter
 from filterpy.common import Q_discrete_white_noise
 from conf_influxdb import *
 
@@ -95,6 +96,8 @@ class ACCKalman:
         self.f[2].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_z)
     
     def filter_acc(self, acc_x:float, acc_y:float, acc_z:float, signal_loss:bool):
+        if type(self.f[0]) == int:
+            self.init_kalman()
         for i in range(3):
             self.f[i].predict()
         if not signal_loss:
@@ -137,6 +140,8 @@ class ACCKalman:
     def calc_avg_gforce(self):
         avg_value = abs(np.mean(self.curve_gforces))
         return avg_value
+    
+
 
 class GYROKalman:
     def __init__(self) -> None:
@@ -147,7 +152,6 @@ class GYROKalman:
         self.var_gyro = 0.0000053744 # racebox gyro
         self.timestep = 0.04 # in racebox
 
-# TODO calculate angles in separate function outside the class
     def init_kalman(self):
         for i in range(3):
             self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
@@ -185,6 +189,8 @@ class GYROKalman:
 
     
     def filter_gyro(self, gyro_x:float, gyro_y:float, gyro_z:float, signal_loss:bool):
+        if type(self.f[0]) == int:
+            self.init_kalman()
         for i in range(3):
             self.f[i].predict()
         if not signal_loss:
@@ -258,3 +264,109 @@ def mean(array):
         suma += value
     result = suma / len(array)
     return result
+
+
+
+class DAMPKalman:
+    def __init__(self) -> None:
+        self.f = list(range(5))
+        self.var = 0.5 * 530
+        self.var_damp = 0.014 
+        self.timestep = 0.004 
+        self.bump = [] 
+        self.rebound = []
+        self.damp_vel_percentage = []
+        for i in range(10, 80, 10):
+            self.bump.append([i, 0])
+        for i in range(-70, 10, 10):
+            self.rebound.append([i, 0])
+            #self.damp_vel_percentage.append([i, 0])
+
+    def init_kalman(self):
+        for i in range(2):
+            self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
+            self.f[i].x = np.array([[0.], 
+                                    [0.]])  # initial state (position and velocity)
+            self.f[i].F = np.array([[1., self.timestep], 
+                                    [0., 1.]])  # state transition matrix
+            self.f[i].H = np.array([[1., 0.]])  # Measurement function
+            self.f[i].P = np.array([[10., 0.], 
+                                    [0., 10.]])  # covariance matrix
+            self.f[i].R = np.array([[self.var_damp]])  # measurement noise
+            self.f[i].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var)  # process noise
+
+    
+    def filter_damp(self, index:int, value:float):
+        if type(self.f[0]) == int:
+            self.init_kalman()
+        self.f[index].predict()
+        self.f[index].update(value)
+
+
+
+    def find_velocity_range(self, velocity):
+        # ugina się to prędkość na +
+        # odgina to -
+        if velocity < 0:
+            for i in range(len(self.rebound)):
+                if (velocity <= self.rebound[i][0]):
+                    return self.rebound[i][0]
+        else:
+            for i in range(len(self.bump)):
+                if (velocity <= self.bump[i][0]):
+                    return self.bump[i][0]
+            return self.bump[i][0]
+
+    def calc_damp_values_percentage(self):
+        number_of_records = 0
+        for pair in self.bound:
+            number_of_records += pair[1]
+
+
+class ExtendedKalman:
+    def __init__(self) -> None:
+        self.f = []
+        self.var = 0.5 * 13.08
+        self.var_gps = 0.000000000003664 # racebox gps
+        self.var_acc = -1 
+        self.var_gyro = -1
+       # self.timestep = 0.04 # in racebox
+        self.speed_one_lap_container = []
+
+    def init_ekf(self, lat, lon, alt, timestep):
+        self.f = ExtendedKalmanFilter(dim_x=9, dim_z=9)
+        self.f.x = np.array([lat, lon, 0., 0., 0., 0., 0., 0., 0.])
+
+        self.f.F = np.array([[1, 0, self.timestep, 0, 0.5 * self.timestep**2, 0, 0, 0, 0],
+                            [0, 1, 0, self.timestep, 0, 0.5 * self.timestep**2, 0, 0, 0],
+                            [0, 0, 1, 0, self.timestep, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 0, self.timestep, 0, 0, 0],
+                            [0, 0, 0, 0, 1, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 1]])
+        
+        self.f.H = np.eye(9)
+        self.f.P = np.eye(9) * 10
+        self.f.R = np.diag([self.var_gps, self.var_gps, self.var_gps,  
+                    self.var_acc, self.var_acc, self.var_acc, 
+                    self.var_gyro, self.var_gyro, self.var_gyro])
+        self.f.Q = Q_discrete_white_noise(dim=9, dt=timestep, var=self.var)
+
+    #TODO: define Jacobians
+
+
+        
+        
+                
+    
+    def filter_gps(self, lat:float, lon:float, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, signal_loss:bool):
+        if type(self.f) == int:
+            self.init_kalman(lat, lon)
+
+
+        self.f.predict()
+        if not signal_loss:
+            z = np.array([lat, lon, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z])
+            self.f.update(z)
