@@ -33,12 +33,14 @@ def receive_data():
                 timestamp = struct.unpack('<q', timestamp_bytes)[0]
                 date = datetime.datetime.fromtimestamp(timestamp/1000.0)
                 print(time.time())
+                print(timestamp/1000.0)
 
                 # data to process later
                 data = struct.unpack('>H', line[7:9])[0]
 
                 print(f'id: {id}    timestamp: {date}  real timestamp:{datetime.datetime.fromtimestamp(time.time())}   data:{data}')
                 print(f'delta: {datetime.datetime.fromtimestamp(time.time()) - date}')
+                print(date)
                 counter = 0
 
 def process_data(queue):
@@ -107,13 +109,6 @@ def process_data(queue):
 
 
 if __name__ == "__main__":
-   # queue = Queue()
-   # receive = Process(target=receive_data, args=(queue,))
-   # process = Process(target=process_data, args=(queue,))
-   # receive.start()
-   # process.start()
-   # receive.join()
-   # process.join()
     receive_data()
 
     
