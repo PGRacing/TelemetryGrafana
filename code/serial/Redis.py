@@ -1,5 +1,6 @@
 import redis
 import struct
+import time
 
 class Redis:
     def __init__(self):
@@ -33,7 +34,7 @@ class Redis:
 
                     data_dict = {"counter":data}
                         
-                    self.send_data_to_redis(timestamp, data_dict)
+                    self.send_data_to_redis(time.time()*1000, data_dict)
 
 
             # wait for the next message
@@ -41,6 +42,16 @@ class Redis:
             # else, the message is not complete and it's skipped
             while queue.get() != 255:
                 pass
+
+    def start_redis_test(self, queue):
+        self.r = redis.Redis(host='127.0.0.1', port=6379, db=0)
+        print("Starting redis.")
+
+        while True:
+            value = queue.get()
+            self.send_data_to_redis(time.time()*1000, {"counter": value})
+            print(f"Data sent to redis. counter: {value}")
+
 
 
     def send_data_to_redis(self, timestamp, data):
