@@ -123,32 +123,54 @@ def import_csv_imu(filepath, start_time, f_acc, f_gyro):
 TODO: Calculate variance for imu and gps
 '''
 
-def acc_data_live(data, timestamp, f_acc):
+def acc_data_live(queue, timestamp, f_acc, lap_counter, lap_diff):
+    acc_multiplier = 128.
+    data = bytearray()
 
+    for i in range(3):
+        data.extend([queue.get()])
     acc_x, acc_y, acc_z = struct.upack("<HHH", data)
+
     if acc_x:
-        acc_x /= 128.
-        acc_y /= 128.
-        acc_z /= 128.
+        acc_x /= acc_multiplier
+        acc_y /= acc_multiplier
+        acc_z /= acc_multiplier
 
         f_acc.filter_acc(acc_x, acc_y, acc_z, False)
+        new_lap_forces = f_acc.curve_detector(lap_counter, lap_diff)
 
     else:
         f_acc.filter_acc(acc_x, acc_y, acc_z, True)
 
     data_to_send = {
-        "timestamp": timestamp,
         "acc_x": f_acc[0].x[0][0],
         "acc_y": f_acc[1].x[0][0],
         "acc_z": f_acc[2].x[0][0]
     }
 
+    if new_lap_forces:
+        data_to_send.update(new_lap_forces)
+
     return data_to_send
 
+def gyro_data_live(queue, f_gyro):
+    gyro_multiplier = 128.
+    data = bytearray()
 
+    for i in range(3):
+        data.extend([queue.get()])
+    gyro_x, gyro_y, gyro_z = struct.unpack("<HHH", data)
+    if gyro_x:
+        gyro_x /= gyro_multiplier
+        gyro_y /= gyro_multiplier
+        gyro_z /= gyro_multiplier
 
-if not row['GForceX'] or not row['GForceY'] or not row['GForceZ']:
-                signal_loss_acc = True
-            acc_data.filter_acc(GForceX, GForceY, GForceZ, signal_loss_acc)
-            acc_data.curve_detector(lap_counter,lap_diff, timestamp, points)
-    
+        f_gyro.filter_gyro(gyro_x, gyro_y, gyro_z, False)
+
+    else:
+        f_gyro.filter_gyro(gyro_x, gyro_y, gyro_z, True)
+
+    data_to_send = {"gyro_x": f_gyro.f[0].x[0][0],
+                    "gyro_y": f_gyro.f[1].x[0][0],
+                    "gyro_z": f_gyro.f[2].x[0][0]}
+    return data_to_send

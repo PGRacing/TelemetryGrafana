@@ -211,7 +211,7 @@ def convert_csv_gps(filepath):
   live telemetry.
   '''
 
-def gps_data(data, timestamp, filter):
+def gps_data(queue, filter):
       
     # TODO: decode data
 
@@ -224,7 +224,6 @@ def gps_data(data, timestamp, filter):
         filter.filter_gps(0, 0, True)
 
     data_to_send = {
-        "timestamp": timestamp,
         "lat": filter[0].x[0][0],
         "lon": filter[1].x[0][0],
     }

@@ -274,7 +274,7 @@ def engine_data1(data, timestamp, theoretical_heat_prev, points):
     point = (
         Point('engine')
         .tag("engine", 'heat')
-        .field("heat_theoretical_new_map", theoretical_heat)
+        .field("theoretical_heat", theoretical_heat)
         .time(timestamp)
     )
     points.append(point)
@@ -282,7 +282,7 @@ def engine_data1(data, timestamp, theoretical_heat_prev, points):
     point = (
         Point('engine')
         .tag("engine", 'heat')
-        .field("derivative", derivative_theoretical)
+        .field("theoretical_growth", derivative_theoretical)
         .time(timestamp)
     )
     points.append(point)
@@ -324,7 +324,7 @@ def engine_data2(data, timestamp, points):
     point = (
         Point('engine')
         .tag("oil", 'raw')
-        .field("temp", oil_temperature)
+        .field("oil_temperature", oil_temperature)
         .time(timestamp)
     )
     points.append(point)
@@ -332,7 +332,7 @@ def engine_data2(data, timestamp, points):
     point = (
         Point('engine')
         .tag("oil", 'raw')
-        .field("preassure", oil_preassure)
+        .field("oil_preassure", oil_preassure)
         .time(timestamp)
     )
     points.append(point)
@@ -340,7 +340,7 @@ def engine_data2(data, timestamp, points):
     point = (
         Point('engine')
         .tag("ecumaster", 'raw')
-        .field("clt", clt)
+        .field("CLT", clt)
         .time(timestamp)
     )
     points.append(point)
@@ -356,11 +356,125 @@ def engine_data6(data, timestamp, points):
     point = (
         Point('engine')
         .tag("engine", 'raw')
-        .field("Coolant fan", coolant_fan)
+        .field("coolant_fan", coolant_fan)
         .time(timestamp)
     )
     points.append(point)
 
+
+'''
+LIve telemetry.
+'''
+def engine_data0_live(queue, theoretical_heat_prev):
+    '''
+    <   Little Endian Byte Order
+    H   unsigned 16 bits
+    B   unsigned 8 bits
+    b   signed 8 bits
+    '''
+    data = bytearray()
+    for i in range(8):
+        data.extend([queue.get()])
+
+    rpm, tps, iat, map, injpw = struct.unpack('<HBbHH', data)
+    tps *= 0.5
+
+    theoretical_heat = engine_heat.get_heat(rpm, map)
+    derivative_theoretical = calc_derivative(theoretical_heat, theoretical_heat_prev, 0.04)
+    tps_range = engine_heat.match_range(tps)
+
+    data_to_send = {
+        "RPM": rpm,
+        "TPS": tps,
+        "MAP": map,
+        "theoretical_heat": theoretical_heat,
+        "theoretical_growth": derivative_theoretical,
+        "iat": iat,
+    }
+    return data_to_send
+
+
+def engine_data2_live(queue):
+    data = bytearray()
+    for i in range(8):
+        data.extend([queue.get()])
+
+    vspd, baro, oil_temperature, oil_pressure, fuelp, clt = struct.unpack('<HBBBBh', data)
+    clt -= 40
+    oil_preassure *= 0.0625
+
+    data_to_send = {
+        "CLT": clt,
+        "oil_temperature": oil_temperature,
+        "oil_pressure": oil_pressure,
+
+    }
+    return data_to_send
+
+def engine_data3_live(queue):
+    data = bytearray()
+    for i in range(8):
+        data.extend([queue.get()])
+
+    ignang, dwell, lambda_, lamcorr, egt1, egt2 = struct.unpack('<bBBBHH', data)
+    lambda_ *= 0.0078125
+
+    data_to_send = {
+        "lambda": lambda_,
+
+    }
+    return data_to_send
+
+def engine_data4_live(queue):
+    data = bytearray()
+    for i in range(8):
+        data.extend([queue.get()])
+
+    gera, ecu_temp, batt, errflag, flags1, ethanol_content = struct.unpack('<BbHBBB', data)
+    batt *= 0.027
+
+    flags1_bits = ((flags1 >> bit) & 1 for bit in range(8))
+    (gearcut, als, lc, idle, table_set, tc_intervention, pit_limiter) = flags1_bits
+
+    data_to_send = {
+        "lambda": batt,
+        "gearcut": gearcut,
+        "als": als,
+        "lc": lc,
+        "idle": idle,
+        "table_set": table_set,
+        "tc_intervention": tc_intervention,
+        "pit_limiter": pit_limiter,
+
+    }
+    return data_to_send
+
+def engine_data6_live(queue):
+    data = bytearray()
+    for i in range(8):
+        data.extend([queue.get()])
+
+    ain5, ain6, outflags1, outflags2, outflags3, outflags4 = struct.unpack('<HHBBBB', data)
+    outflags4_bits = ((outflags4 >> bit) & 1 for bit in range(8))
+    (fps, coolant_fan, ac_clutch, ac_fan, nitrous, starter_req, boost_map_state) = outflags4_bits
+
+    data_to_send = {
+        "coolant_fan": coolant_fan,
+
+    }
+    return data_to_send
+
+def fuel_data(data, timestamp):
+
+    #TODO decode bytes
+
+    data_to_send = {
+        "timestamp": timestamp,
+        "fuel_consumption": fuel_consumption,
+        "burned_fuel": burned_fuel,
+
+    }
+    return data_to_send
     
 
 if __name__ == "__main__":

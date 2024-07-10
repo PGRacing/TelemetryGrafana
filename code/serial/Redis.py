@@ -1,14 +1,28 @@
 import redis
 import struct
 import time
+from pathlib import Path
+import sys
+from multiprocessing import Process, Queue
+
+directory = Path(__file__).absolute()
+ 
+# setting path
+sys.path.append(f'{directory.parent.parent}')
+
+from func_imu import gyro_data_live
+from data_filtration import *
 
 class Redis:
-    def __init__(self):
-        pass
+    def __init__(self, queue):
+        self.redis_process = Process(target=self.start_redis_test, args=(queue,))
+        self.redis_process.start()
 
     def start_redis(self, queue):
         self.r = redis.Redis(host='127.0.0.1', port=6379, db=0)
-        print("Starting redis.")
+        print('Starting redis.')
+
+        gyro_data = GYROKalman()
 
         while True:
             id = queue.get()
@@ -32,9 +46,14 @@ class Redis:
                         data_bytes.extend([queue.get()])
                     data = struct.unpack('>H', data_bytes)[0]
 
-                    data_dict = {"counter":data}
+                    data_dict = {'counter':data}
                         
                     self.send_data_to_redis(time.time()*1000, data_dict)
+
+                case 507:
+                    gyro_data = gyro_data_live(queue, gyro_data)
+
+
 
 
             # wait for the next message
@@ -45,15 +64,18 @@ class Redis:
 
     def start_redis_test(self, queue):
         self.r = redis.Redis(host='127.0.0.1', port=6379, db=0)
-        print("Starting redis.")
+        print('Starting redis.')
 
         while True:
             value = queue.get()
-            self.send_data_to_redis(time.time()*1000, {"counter": value})
-            print(f"Data sent to redis. counter: {value}")
+
+            data_dict = {'counter': value,
+                         'counter2': value/2,}
+            self.send_data_to_redis(time.time()*1000, data_dict)
+            print(f'Data sent to redis. counter: {value}')
 
 
 
     def send_data_to_redis(self, timestamp, data):
         for key, value in data.items():
-            self.r.xadd(key, fields={"timestamp": timestamp, "value": value})
+            self.r.xadd(key, fields={'timestamp': timestamp, 'value': value})

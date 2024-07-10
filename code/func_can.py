@@ -184,18 +184,22 @@ def flow_data(data, timestamp, points):
 '''
 Live telemetry.
 '''
-def flow_data_live(data, timestamp):
+def flow_data_live(queue):
     '''
     <   Little Endian Byte Order
     H   unsigned short (uint16), first 2 bytes
     H   unsigned short (uint16), next 2 bytes
     '''
+    flow_multiplier = 32.
+    data = bytearray()
+    
+    for i in range(4):
+        data.extend([queue.get()])
     left, right = struct.unpack('<HH', data)
-    left /= 32.
-    right /= 32.
+    left /= flow_multiplier
+    right /= flow_multiplier
 
     data_to_send = {
-        "timestamp": timestamp,
         "flow_right_radiator": left,
         "flow_left_radiator": right,
     }

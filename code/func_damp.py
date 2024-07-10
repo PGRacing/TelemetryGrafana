@@ -348,7 +348,7 @@ def filter_data(data, index, damp_data):
 Live telemetry.
 '''
 
-def damp_data_live(data, id, position, timestamp):
+def damp_data_live(queue, id, position):
     # position is a string - "front", "rear"
 
     # TODO: decode data
@@ -357,7 +357,6 @@ def damp_data_live(data, id, position, timestamp):
     position_right = filter_data(calc_wheel_position(delta_right, id), 1, delta_right)
 
     data_to_send = {
-        "timestamp": timestamp,
         f"angle_{position}_left": position_left,
         f"angle_{position}_left": position_right,
     }

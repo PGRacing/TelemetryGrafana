@@ -112,7 +112,7 @@ def abs_data(data, timestamp, prev_speed, if_front, points):
 '''
 Live telemetry
 '''
-def abs_data_live(data, timestamp, prev_speed, if_front):
+def abs_data_live(queue, prev_speed, if_front):
     '''
     prev_speed to tupla:
     idex 0: left
@@ -137,7 +137,6 @@ def abs_data_live(data, timestamp, prev_speed, if_front):
     speed_right = low_pass_filter(right_prev*2.0, right_prev, low_pass_filter_alpha_4Hz)
 
     data_to_send = {
-        "timestamp": timestamp,
         f"{if_front}_left_speed": speed_left,
         f"{if_front}_right_speed": speed_right,
     }

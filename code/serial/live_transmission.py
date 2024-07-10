@@ -1,7 +1,7 @@
 import logging
 import serial
 import time
-from Redis import Redis
+from Redis import *
 from multiprocessing import Process, Queue
 
 
@@ -31,16 +31,11 @@ def send_data(queue):
 
 if __name__ == "__main__":
     queue = Queue()
-    r = Redis()
 
     send_process = Process(target=send_data, args=(queue,))
    # receive_process = Process(target=receive_data, args=(queue,))
-    websocket_process = Process(target=r.start_redis_test, args=(queue,))
+    r = Redis(queue)
 
-   # receive_process.start()
+  #  receive_process.start()
     send_process.start()
-    websocket_process.start()
 
-  #  receive_process.join()
-    send_process.join()
-    websocket_process.join()

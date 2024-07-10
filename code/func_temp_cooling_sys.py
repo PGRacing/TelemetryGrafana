@@ -457,7 +457,7 @@ def cooling_data(data, timestamp, heat, temperature, flow, clt, heat_prev_values
 Live telemetry.
 '''
 
-def cooling_data_live(data, timestamp, heat, temperature, flow, clt, heat_prev_values):
+def cooling_data_live(queue, heat, temperature, flow, clt, heat_prev_values):
     # TODO decode data
 
     ''' radiators and engine temperature '''
@@ -480,8 +480,6 @@ def cooling_data_live(data, timestamp, heat, temperature, flow, clt, heat_prev_v
     heat_engine_derivative = calc_derivative(engine_heat, heat_engine_prev, 1)
 
     data_to_send = {
-        "timestamp": timestamp,
-
         "engine_out_temperature": temperature.f[1].x[0][0],
         "engine_out_temp_rise": temperature.f[1].x[1][0]*60,
         "engine_in_temperature": temperature.f[0].x[0][0],
