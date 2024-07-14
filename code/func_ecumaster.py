@@ -380,12 +380,15 @@ def engine_data0_live(queue, theoretical_heat_prev):
     tps *= 0.5
 
     theoretical_heat = engine_heat.get_heat(rpm, map)
+    if theoretical_heat_prev == -1.:
+        theoretical_heat_prev = theoretical_heat
     derivative_theoretical = calc_derivative(theoretical_heat, theoretical_heat_prev, 0.04)
     tps_range = engine_heat.match_range(tps)
 
     data_to_send = {
         "RPM": rpm,
         "TPS": tps,
+        "TPS_range": tps_range,
         "MAP": map,
         "theoretical_heat": theoretical_heat,
         "theoretical_growth": derivative_theoretical,

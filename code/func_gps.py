@@ -211,7 +211,7 @@ def convert_csv_gps(filepath):
   live telemetry.
   '''
 
-def gps_data(queue, filter):
+def gps_data_live(queue, filter):
       
     # TODO: decode data
 
