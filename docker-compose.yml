@@ -30,7 +30,6 @@ services:
       REDIS_PORT: 6379
   redis:
     image: redis
-    loadmodule: bin/redistimeseries.so
     ports:
       - 6379:6379
 volumes:
