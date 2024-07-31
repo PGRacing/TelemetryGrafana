@@ -13,6 +13,7 @@ def receive_data():
     counter = 0
     while(True):
         line = ser.read(1024)
+        print(line)
       #  queue.put(line)
         if(len(line)>8 and line[0] == 0x05):
             counter+=1
