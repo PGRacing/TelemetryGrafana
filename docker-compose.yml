@@ -22,12 +22,8 @@ services:
       - "3000:3000"
   websocket_server:
     image: websocket_server
-    build: ./code/serial
     ports:
       - "1627:1627"
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
   redis:
     image: redis
     ports:
