@@ -73,23 +73,24 @@ class ACCKalman:
 
     def init_kalman(self):
         for i in range(3):
-            self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
-            if i == 0:
-                self.f[i].x = np.array([[0.], 
-                                        [0.]])  # initial state (position and velocity)
-            elif i == 1:
-                self.f[i].x = np.array([[0.], 
-                                        [0.]])
-            else:
-                self.f[i].x = np.array([[0.],
-                                        [self.gforce]])
-            
-            self.f[i].F = np.array([[1., 1/self.timestep], 
-                                    [0., 1.]])  # state transition matrix
-            self.f[i].H = np.array([[1., 0.]])  # Measurement function
-            self.f[i].P = np.array([[10., 0.], 
-                                    [0., 10.]])  # covariance matrix
-            self.f[i].R = np.array([[self.var_acc]])  # measurement noise
+            for i in range(3):
+                self.f[i] = KalmanFilter(dim_x=2, dim_z=1)
+                if i == 0:
+                    self.f[i].x = np.array([[0.], 
+                                            [0.]])  # initial state (acc and velocity)
+                elif i == 1:
+                    self.f[i].x = np.array([[0.], 
+                                            [0.]])
+                else:
+                    self.f[i].x = np.array([[self.gforce],
+                                            [0.]])
+                
+                self.f[i].F = np.array([[1., self.timestep], 
+                                        [0., 1.]])  # state transition matrix
+                self.f[i].H = np.array([[1., 0.]])  # Measurement function
+                self.f[i].P = np.array([[10., 0.], 
+                                        [0., 10.]])  # covariance matrix
+                self.f[i].R = np.array([[self.var_acc]])  # measurement noise
         self.f[0].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_x)  # process noise
         self.f[1].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_y)
         self.f[2].Q = Q_discrete_white_noise(dim=2, dt=self.timestep, var=self.var_z)
@@ -128,6 +129,28 @@ class ACCKalman:
                     .time(timestamp)
                 )
                 points.append(point)
+
+        if float(self.f[1].x[0][0]) > -5. and float(self.f[1].x[0][0]) < 5.:
+            self.one_lap_container_y.append(abs(float(self.f[1].x[0][0])))
+            self.one_lap_container_x.append(abs(float(self.f[0].x[0][0])))     
+                
+    def curve_detector_live(self, lap_number, lap_diff, timestamp):
+        data_to_send = {}
+        if lap_diff == 1:
+            if(len(self.one_lap_container_x)>0):
+                mean_force_x = mean(self.one_lap_container_x)
+                mean_force_y = mean(self.one_lap_container_y)
+
+                self.one_lap_container_x.clear()
+                self.one_lap_container_y.clear()
+
+                data_to_send = {
+                    "lap_number": lap_number,
+                    "mean_force_x": mean_force_x,
+                    "mean_force_y": mean_force_y
+                }
+
+                return data_to_send
 
         if float(self.f[1].x[0][0]) > -5. and float(self.f[1].x[0][0]) < 5.:
             self.one_lap_container_y.append(abs(float(self.f[1].x[0][0])))
@@ -179,9 +202,9 @@ class GYROKalman:
         psi_r = math.atan2(math.sin(lon2 - lon1) * math.cos(lat2), math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1))
         psi = math.degrees(psi_r)
 
-        yaw = wrap_angle(psi)
+       # yaw = wrap_angle(psi)
 
-        return yaw
+        return psi
 
     
     def filter_gyro(self, gyro_x:float, gyro_y:float, gyro_z:float, signal_loss:bool):
